@@ -131,6 +131,90 @@ Environment variables (set in `.env` file):
 - **Atomic Writes**: File writes use temporary files to ensure atomicity
 - **Reference Ordering**: References are numbered by their position in the original text
 
+## Reference Extraction & Restoration
+
+WikiHelper's core functionality is built around extracting `<ref>` tags from WikiText and restoring them after editing. This allows users to edit content without worrying about complex reference markup.
+
+### How Extraction Works
+
+The extraction process uses the `wikitextparser` library to parse WikiText and identify all `<ref>` tags, including:
+- **Standard refs**: `<ref>citation text</ref>`
+- **Named refs**: `<ref name="source">citation text</ref>`
+- **Self-closing refs**: `<ref name="source" />`
+
+Each reference is replaced with a numbered placeholder like `[ref1]`, `[ref2]`, etc., and the original content is stored in a JSON map.
+
+#### Extraction Example
+
+**Input WikiText:**
+```wikitext
+Albert Einstein was a theoretical physicist<ref>Born March 14, 1879</ref> who developed 
+the theory of relativity<ref name="nobel">Nobel Prize in Physics, 1921</ref>. His work 
+is referenced frequently<ref name="nobel" />.
+```
+
+**Output (Editable Text):**
+```wikitext
+Albert Einstein was a theoretical physicist[ref1] who developed 
+the theory of relativity[ref2]. His work 
+is referenced frequently[ref3].
+```
+
+**Generated refs.json:**
+```json
+{
+  "ref1": "<ref>Born March 14, 1879</ref>",
+  "ref2": "<ref name=\"nobel\">Nobel Prize in Physics, 1921</ref>",
+  "ref3": "<ref name=\"nobel\" />"
+}
+```
+
+### How Restoration Works
+
+When you save your edits, WikiHelper scans for `[refN]` placeholders and replaces each one with its original `<ref>` tag content from the stored JSON map. If a placeholder isn't found in the map, it's kept as-is (useful for adding new references manually).
+
+#### Restoration Example
+
+**Edited Text (with placeholders):**
+```wikitext
+Albert Einstein was a renowned theoretical physicist[ref1] best known for developing 
+the theory of relativity[ref2]. His groundbreaking work 
+is referenced frequently in modern physics[ref3].
+```
+
+**Output (Restored WikiText):**
+```wikitext
+Albert Einstein was a renowned theoretical physicist<ref>Born March 14, 1879</ref> best known for developing 
+the theory of relativity<ref name="nobel">Nobel Prize in Physics, 1921</ref>. His groundbreaking work 
+is referenced frequently in modern physics<ref name="nobel" />.
+```
+
+### Technical Implementation
+
+The extraction and restoration functions can be used programmatically:
+
+```python
+from wikiops.refs import extract_refs_from_text, restore_refs_in_text
+
+# Extraction
+original_text = 'Hello<ref>World</ref> and <ref name="foo">Bar</ref>!'
+editable_text, refs_map = extract_refs_from_text(original_text)
+# editable_text: 'Hello[ref1] and [ref2]!'
+# refs_map: {'ref1': '<ref>World</ref>', 'ref2': '<ref name="foo">Bar</ref>'}
+
+# Restoration
+modified_text = 'Hello[ref1] and [ref2]! Added more content.'
+restored_text = restore_refs_in_text(modified_text, refs_map)
+# restored_text: 'Hello<ref>World</ref> and <ref name="foo">Bar</ref>! Added more content.'
+```
+
+### Key Algorithm Details
+
+1. **Stable Numbering**: References are numbered by their position in the original text, ensuring consistent placeholder assignment.
+2. **Reverse Replacement**: During extraction, replacements are applied from end to start to preserve string indices.
+3. **Exact Preservation**: The original `<ref>` content is stored as an exact substring slice, preserving all formatting, whitespace, and attributes.
+4. **Graceful Handling**: Missing placeholders during restoration are kept as-is, allowing manual reference additions.
+
 ## License
 
 MIT License
