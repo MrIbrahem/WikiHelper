@@ -1,12 +1,6 @@
 # tests/test_refs_roundtrip.py
 # Tests for round-trip integrity
 
-import sys
-from pathlib import Path
-
-# Add parent directory to path to import modules
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from extract_refs_wtp import extract_refs_from_text
 from restore_refs_wtp import restore_refs_in_text
 
