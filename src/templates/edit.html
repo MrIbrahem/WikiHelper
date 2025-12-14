@@ -6,22 +6,21 @@
 <h1>Edit Workspace: <code>{{ slug }}</code></h1>
 
 <p class="breadcrumb">
-    <a href="{{ url_for('index') }}">Home</a> &raquo; 
-    <a href="{{ url_for('browse_workspace', slug=slug) }}">{{ slug }}</a> &raquo; 
+    <a href="{{ url_for('index') }}">Home</a> &raquo;
+    <a href="{{ url_for('browse_workspace', slug=slug) }}">{{ slug }}</a> &raquo;
     Edit
 </p>
 
 <form method="POST" class="edit-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    
+
     <div class="form-group">
         <label for="editable_content">Editable Content (editable.wiki)</label>
         <small>
             Edit the text below. References have been replaced with placeholders like [ref1], [ref2], etc.
             Keep these placeholders if you want to preserve the references.
         </small>
-        <textarea id="editable_content" name="editable_content" rows="25" 
-                  class="editor">{{ editable_content }}</textarea>
+        <textarea id="editable_content" name="editable_content" rows="25" class="editor">{{ editable_content }}</textarea>
     </div>
 
     <div class="form-actions">
