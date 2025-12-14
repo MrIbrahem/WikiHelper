@@ -7,7 +7,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, abo
 from flask_wtf.csrf import CSRFProtect
 
 from werkzeug.exceptions import RequestEntityTooLarge
-from wikiops.storage import (
+from .wikiops.storage import (
     list_workspaces,
     create_workspace,
     update_workspace,
@@ -15,7 +15,7 @@ from wikiops.storage import (
     read_text,
     get_workspace_file
 )
-from config import Config
+from .config import Config
 
 
 # def create_app(config_class=Config):
