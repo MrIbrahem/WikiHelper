@@ -4,7 +4,7 @@
 from pathlib import Path
 from urllib.parse import quote
 
-from flask import Flask, render_template, request, redirect, url_for, flash, abort, Response
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, Response, jsonify
 from flask_wtf.csrf import CSRFProtect
 
 from config import Config
@@ -16,178 +16,187 @@ from wikiops.storage import (
     read_text,
     get_workspace_file
 )
+from werkzeug.exceptions import RequestEntityTooLarge
 
 
-def create_app(config_class=Config):
-    """Application factory."""
-    app = Flask(__name__)
-    app.config.from_object(config_class)
+# def create_app(config_class=Config):
+"""Application factory."""
+app = Flask(__name__)
+app.config.from_object(Config)
 
-    # Initialize CSRF protection
-    csrf = CSRFProtect(app)
+# Initialize CSRF protection
+csrf = CSRFProtect(app)
 
-    # Ensure workspace root exists
-    root = app.config["WIKI_WORK_ROOT"]
-    root.mkdir(parents=True, exist_ok=True)
+# Ensure workspace root exists
+root = app.config["WIKI_WORK_ROOT"]
+root.mkdir(parents=True, exist_ok=True)
 
-    @app.route("/")
-    def index():
-        """Dashboard - list all workspaces."""
-        workspaces = list_workspaces(root)
-        return render_template("index.html", workspaces=workspaces)
 
-    @app.route("/new", methods=["GET", "POST"])
-    def new_workspace():
-        """Create a new workspace."""
-        if request.method == "POST":
-            title = request.form.get("title", "").strip()
-            wikitext = request.form.get("wikitext", "")
+@app.errorhandler(RequestEntityTooLarge)
+def handle_large_request(e):
+    return jsonify({
+        "error": "Request too large",
+        "message": "Uploaded data exceeds the allowed size limit"
+    }), 413
 
-            # Validate title
-            if not title:
-                flash("Title is required.", "error")
-                return render_template("new.html", title=title, wikitext=wikitext)
 
-            if len(title) > app.config.get("MAX_TITLE_LENGTH", 120):
-                flash(f"Title must be {app.config.get('MAX_TITLE_LENGTH', 120)} characters or less.", "error")
-                return render_template("new.html", title=title, wikitext=wikitext)
+@app.route("/")
+def index():
+    """Dashboard - list all workspaces."""
+    workspaces = list_workspaces(root)
+    return render_template("index.html", workspaces=workspaces)
 
-            # Validate wikitext
-            if not wikitext:
-                flash("WikiText content is required.", "error")
-                return render_template("new.html", title=title, wikitext=wikitext)
 
-            try:
-                slug, workspace_path, is_new = create_workspace(root, title, wikitext)
+@app.route("/new", methods=["GET", "POST"])
+def new_workspace():
+    """Create a new workspace."""
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        wikitext = request.form.get("wikitext", "")
 
-                if is_new:
-                    flash(f"Workspace '{slug}' created successfully.", "success")
-                else:
-                    flash(f"Workspace '{slug}' already exists. Redirecting to edit.", "info")
+        # Validate title
+        if not title:
+            flash("Title is required.", "error")
+            return render_template("new.html", title=title, wikitext=wikitext)
 
-                return redirect(url_for("edit_workspace", slug=slug))
+        if len(title) > app.config.get("MAX_TITLE_LENGTH", 120):
+            flash(f"Title must be {app.config.get('MAX_TITLE_LENGTH', 120)} characters or less.", "error")
+            return render_template("new.html", title=title, wikitext=wikitext)
 
-            except ValueError as e:
-                flash(str(e), "error")
-                return render_template("new.html", title=title, wikitext=wikitext)
+        # Validate wikitext
+        if not wikitext:
+            flash("WikiText content is required.", "error")
+            return render_template("new.html", title=title, wikitext=wikitext)
 
-        return render_template("new.html")
+        try:
+            slug, workspace_path, is_new = create_workspace(root, title, wikitext)
 
-    @app.route("/w/<slug>/edit", methods=["GET", "POST"])
-    def edit_workspace(slug: str):
-        """Edit workspace's editable.wiki."""
-        workspace_path = safe_workspace_path(root, slug)
-        if workspace_path is None or not workspace_path.exists():
-            abort(404)
+            if is_new:
+                flash(f"Workspace '{slug}' created successfully.", "success")
+            else:
+                flash(f"Workspace '{slug}' already exists. Redirecting to edit.", "info")
 
-        editable_path = workspace_path / "editable.wiki"
-        restored_path = workspace_path / "restored.wiki"
+            return redirect(url_for("edit_workspace", slug=slug))
 
-        if not editable_path.exists():
-            abort(404)
+        except ValueError as e:
+            flash(str(e), "error")
+            return render_template("new.html", title=title, wikitext=wikitext)
 
-        restored_content = ""
-        if request.method == "POST":
-            editable_content = request.form.get("editable_content", "")
+    return render_template("new.html")
 
-            try:
-                restored_content = update_workspace(workspace_path, editable_content)
-                flash("Workspace updated and references restored.", "success")
-            except Exception as e:
-                flash(f"Error updating workspace: {e}", "error")
-                editable_content = read_text(editable_path)
-        else:
+
+@app.route("/w/<slug>/edit", methods=["GET", "POST"])
+def edit_workspace(slug: str):
+    """Edit workspace's editable.wiki."""
+    workspace_path = safe_workspace_path(root, slug)
+    if workspace_path is None or not workspace_path.exists():
+        abort(404)
+
+    editable_path = workspace_path / "editable.wiki"
+    restored_path = workspace_path / "restored.wiki"
+
+    if not editable_path.exists():
+        abort(404)
+
+    restored_content = ""
+    if request.method == "POST":
+        editable_content = request.form.get("editable_content", "")
+
+        try:
+            restored_content = update_workspace(workspace_path, editable_content)
+            flash("Workspace updated and references restored.", "success")
+        except Exception as e:
+            flash(f"Error updating workspace: {e}", "error")
             editable_content = read_text(editable_path)
-            if restored_path.exists():
-                restored_content = read_text(restored_path)
+    else:
+        editable_content = read_text(editable_path)
+        if restored_path.exists():
+            restored_content = read_text(restored_path)
 
-        # Load meta for display
-        meta_content = get_workspace_file(workspace_path, "meta.json")
+    # Load meta for display
+    meta_content = get_workspace_file(workspace_path, "meta.json")
 
-        return render_template(
-            "edit.html",
-            slug=slug,
-            editable_content=editable_content,
-            restored_content=restored_content,
-            meta=meta_content
-        )
-
-    @app.route("/w/<slug>/browse")
-    def browse_workspace(slug: str):
-        """Browse workspace files."""
-        workspace_path = safe_workspace_path(root, slug)
-        if workspace_path is None or not workspace_path.exists():
-            abort(404)
-
-        # List available files
-        files = []
-        for filename in ["original.wiki", "refs.json", "editable.wiki", "restored.wiki", "meta.json"]:
-            file_path = workspace_path / filename
-            if file_path.exists():
-                files.append({
-                    "name": filename,
-                    "size": file_path.stat().st_size,
-                    "modified": file_path.stat().st_mtime
-                })
-
-        # Load meta for display
-        meta_content = get_workspace_file(workspace_path, "meta.json")
-
-        return render_template(
-            "browse.html",
-            slug=slug,
-            files=files,
-            meta=meta_content
-        )
-
-    @app.route("/w/<slug>/file/<name>")
-    def view_file(slug: str, name: str):
-        """View a specific file in the workspace."""
-        workspace_path = safe_workspace_path(root, slug)
-        if workspace_path is None or not workspace_path.exists():
-            abort(404)
-
-        content = get_workspace_file(workspace_path, name)
-        if content is None:
-            abort(404)
-
-        return render_template(
-            "view_file.html",
-            slug=slug,
-            filename=name,
-            content=content
-        )
-
-    @app.route("/w/<slug>/download/<name>")
-    def download_file(slug: str, name: str):
-        """Download a specific file from the workspace."""
-        workspace_path = safe_workspace_path(root, slug)
-        if workspace_path is None or not workspace_path.exists():
-            abort(404)
-
-        content = get_workspace_file(workspace_path, name)
-        if content is None:
-            abort(404)
-
-        # Determine content type
-        if name.endswith(".json"):
-            content_type = "application/json"
-        else:
-            content_type = "text/plain"
-
-        # Safely encode the filename for Content-Disposition header
-        safe_filename = quote(name, safe="")
-        return Response(
-            content,
-            mimetype=content_type,
-            headers={"Content-Disposition": f"attachment; filename*=UTF-8''{safe_filename}"}
-        )
-
-    return app
+    return render_template(
+        "edit.html",
+        slug=slug,
+        editable_content=editable_content,
+        restored_content=restored_content,
+        meta=meta_content
+    )
 
 
-# Create application instance
-app = create_app()
+@app.route("/w/<slug>/browse")
+def browse_workspace(slug: str):
+    """Browse workspace files."""
+    workspace_path = safe_workspace_path(root, slug)
+    if workspace_path is None or not workspace_path.exists():
+        abort(404)
+
+    # List available files
+    files = []
+    for filename in ["original.wiki", "refs.json", "editable.wiki", "restored.wiki", "meta.json"]:
+        file_path = workspace_path / filename
+        if file_path.exists():
+            files.append({
+                "name": filename,
+                "size": file_path.stat().st_size,
+                "modified": file_path.stat().st_mtime
+            })
+
+    # Load meta for display
+    meta_content = get_workspace_file(workspace_path, "meta.json")
+
+    return render_template(
+        "browse.html",
+        slug=slug,
+        files=files,
+        meta=meta_content
+    )
+
+
+@app.route("/w/<slug>/file/<name>")
+def view_file(slug: str, name: str):
+    """View a specific file in the workspace."""
+    workspace_path = safe_workspace_path(root, slug)
+    if workspace_path is None or not workspace_path.exists():
+        abort(404)
+
+    content = get_workspace_file(workspace_path, name)
+    if content is None:
+        abort(404)
+
+    return render_template(
+        "view_file.html",
+        slug=slug,
+        filename=name,
+        content=content
+    )
+
+
+@app.route("/w/<slug>/download/<name>")
+def download_file(slug: str, name: str):
+    """Download a specific file from the workspace."""
+    workspace_path = safe_workspace_path(root, slug)
+    if workspace_path is None or not workspace_path.exists():
+        abort(404)
+
+    content = get_workspace_file(workspace_path, name)
+    if content is None:
+        abort(404)
+
+    # Determine content type
+    if name.endswith(".json"):
+        content_type = "application/json"
+    else:
+        content_type = "text/plain"
+
+    # Safely encode the filename for Content-Disposition header
+    safe_filename = quote(name, safe="")
+    return Response(
+        content,
+        mimetype=content_type,
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{safe_filename}"}
+    )
 
 
 if __name__ == "__main__":

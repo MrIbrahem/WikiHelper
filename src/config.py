@@ -29,7 +29,7 @@ class Config:
     WIKI_WORK_ROOT = Path(os.environ.get("WIKI_WORK_ROOT", "./data")).resolve()
 
     # Maximum content length (5MB)
-    MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", 5 * 1024 * 1024))
+    MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", 500 * 1024 * 1024))
 
     # Maximum title length
     MAX_TITLE_LENGTH = 120
