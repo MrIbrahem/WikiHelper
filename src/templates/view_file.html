@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}{{ filename }} - {{ slug }} - Wiki Ref Manager{% endblock %}
+
+{% block content %}
+<h1>View File: <code>{{ filename }}</code></h1>
+
+<p class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &raquo; 
+    <a href="{{ url_for('browse_workspace', slug=slug) }}">{{ slug }}</a> &raquo; 
+    {{ filename }}
+</p>
+
+<div class="file-actions">
+    <a href="{{ url_for('browse_workspace', slug=slug) }}" class="btn btn-secondary">Back to Files</a>
+    <a href="{{ url_for('download_file', slug=slug, name=filename) }}" class="btn btn-primary">Download</a>
+    <button onclick="copyToClipboard()" class="btn btn-secondary">Copy Content</button>
+</div>
+
+<div class="file-content">
+    <pre id="file-content">{{ content }}</pre>
+</div>
+
+<script>
+function copyToClipboard() {
+    var content = document.getElementById('file-content').innerText;
+    navigator.clipboard.writeText(content).then(function() {
+        alert('Content copied to clipboard!');
+    }, function(err) {
+        alert('Failed to copy content.');
+    });
+}
+</script>
+{% endblock %}

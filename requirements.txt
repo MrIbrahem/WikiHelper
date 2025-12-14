@@ -1,0 +1,4 @@
+Flask>=2.3.0
+python-dotenv>=1.0.0
+wikitextparser>=0.55.0
+Flask-WTF>=1.2.0
