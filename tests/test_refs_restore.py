@@ -1,7 +1,7 @@
 # tests/test_refs_restore.py
 # Tests for ref restoration logic
 
-from restore_refs_wtp import restore_refs_in_text
+from src.wikiops.refs import restore_refs_in_text
 
 
 def test_restore_single_ref():
