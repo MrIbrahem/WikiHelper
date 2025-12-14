@@ -125,12 +125,13 @@ original.wiki     # immutable original input refs.json         # immutable extra
 - Sort by position (`span`)
 - Replace each with `[refN]`
 - Store exact original substrings in `refs.json`
+* example: [extract_refs_wtp.py](extract_refs_wtp.py)
 
 ### Restoration
 - Regex match: `\[ref\d+\]`
 - Replace placeholders with original ref content from `refs.json`
 - If placeholder missing, leave unchanged
-
+* example: [restore_refs_wtp.py](restore_refs_wtp.py)
 ---
 
 ## 7. Flask Routes
