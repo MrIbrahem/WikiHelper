@@ -14,28 +14,30 @@ A lightweight internal web application for managing WikiText content by extracti
 
 ```
 project/
-├── app.py              # Flask application
-├── config.py           # Configuration
 ├── requirements.txt    # Python dependencies
 ├── .env.example        # Environment variables template
 ├── README.md           # This file
 │
-├── templates/          # Jinja2 templates
-│   ├── base.html       # Base template
-│   ├── index.html      # Dashboard
-│   ├── new.html        # New workspace form
-│   ├── edit.html       # Edit workspace
-│   ├── browse.html     # Browse workspace files
-│   └── view_file.html  # View specific file
-│
-├── static/
-│   └── style.css       # Styles
-│
-└── wikiops/            # Wiki operations module
-    ├── __init__.py
-    ├── refs.py         # Reference extraction & restoration
-    ├── storage.py      # Filesystem operations
-    └── models.py       # Data structures
+└── src/                # Application source code
+    ├── app.py          # Flask application
+    ├── config.py       # Configuration
+    │
+    ├── templates/      # Jinja2 templates
+    │   ├── base.html       # Base template
+    │   ├── index.html      # Dashboard
+    │   ├── new.html        # New workspace form
+    │   ├── edit.html       # Edit workspace
+    │   ├── browse.html     # Browse workspace files
+    │   └── view_file.html  # View specific file
+    │
+    ├── static/
+    │   └── style.css   # Styles
+    │
+    └── wikiops/        # Wiki operations module
+        ├── __init__.py
+        ├── refs.py     # Reference extraction & restoration
+        ├── storage.py  # Filesystem operations
+        └── models.py   # Data structures
 ```
 
 ## Workspace Files
@@ -77,6 +79,7 @@ Each workspace contains exactly four files (plus metadata):
 
 5. Run the application:
    ```bash
+   cd src
    python app.py
    ```
 
