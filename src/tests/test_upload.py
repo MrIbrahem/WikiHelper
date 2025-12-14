@@ -1,7 +1,12 @@
 
 import io
 import unittest
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from app import app
+
 
 class TestFileUpload(unittest.TestCase):
     def setUp(self):
@@ -35,6 +40,7 @@ class TestFileUpload(unittest.TestCase):
         self.assertIn(b'Workspace &#39;test-workspace-2&#39; created successfully.', response.data)
         self.assertIn(b'This is content from file.', response.data)
         self.assertNotIn(b'This text should be ignored.', response.data)
+
 
 if __name__ == '__main__':
     unittest.main()
