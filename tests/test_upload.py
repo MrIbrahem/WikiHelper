@@ -1,14 +1,26 @@
 
 import io
+import shutil
+import tempfile
 import unittest
+from pathlib import Path
 from app import app
 
 
 class TestFileUpload(unittest.TestCase):
     def setUp(self):
+        # Create a temporary directory for test workspaces
+        self.test_dir = Path(tempfile.mkdtemp())
+
         app.config['TESTING'] = True
         app.config['WTF_CSRF_ENABLED'] = False  # Disable CSRF for testing
+        app.config['WIKI_WORK_ROOT'] = self.test_dir  # Use temp directory for tests
         self.client = app.test_client()
+
+    def tearDown(self):
+        # Clean up the temporary directory after each test
+        if self.test_dir.exists():
+            shutil.rmtree(self.test_dir)
 
     def test_upload_wikitext_file(self):
         data = {
