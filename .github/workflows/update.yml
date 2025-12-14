@@ -1,0 +1,36 @@
+name: Auto Update Toolforge
+
+on:
+  push:
+    branches:
+      - main
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Copy files to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          port: 22
+          request_pty: true
+          script_stop: true
+          key: ${{ secrets.KEY }}
+          script: |
+            become armake bash -lc "
+              rm -rf ~/WikiHelper &&
+              git clone https://github.com/MrIbrahem/WikiHelper.git &&
+              chmod -R 770 ~/WikiHelper &&
+              cp -rf ~/WikiHelper/web_sh/*.sh ~/web_sh -v &&
+              ~/web_sh/update1.sh &&
+              rm -rf ~/WikiHelper &&
+              echo \"Updated on: $(date '+%Y-%m-%d %H:%M:%S')\" > ~/update_from_github &&
+              toolforge-jobs run pipup --image python3.11 --command "~/web_sh/pip.sh" --wait &&
+              toolforge-webservice python3.11 stop &&
+              toolforge-webservice python3.11 start &&
+              echo ''
+            "
