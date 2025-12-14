@@ -49,7 +49,7 @@ WikiHelper is a Python-based tool for managing WikiText content by extracting an
 - Implement strict path validation (prevent path traversal)
 - Use slugification for folder/workspace names
 - Validate input lengths and enforce content size limits
-- No `.."`, `"/"`, or `"\"` in user-provided paths
+- No `..`, `/`, or `\` in user-provided paths
 - Set `MAX_CONTENT_LENGTH` for uploads/submissions
 
 ### Flask Application Structure (Planned)
