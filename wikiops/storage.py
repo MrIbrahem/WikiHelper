@@ -7,7 +7,7 @@ import json
 import os
 import re
 import tempfile
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -78,11 +78,9 @@ def safe_workspace_path(root: Path, slug: str) -> Optional[Path]:
         resolved = workspace_path.resolve()
         root_resolved = root.resolve()
 
-        # Check the path is within root
-        if not str(resolved).startswith(str(root_resolved) + os.sep) and resolved != root_resolved:
-            # Allow if it's the root itself or a direct child
-            if resolved.parent != root_resolved:
-                return None
+        # Check the resolved path is a direct child of root
+        if resolved.parent != root_resolved:
+            return None
 
         return resolved
     except (OSError, ValueError):
@@ -214,7 +212,7 @@ def create_workspace(root: Path, title: str, wikitext: str) -> tuple:
         atomic_write(restored_path, wikitext)
 
         # Write meta.json
-        now = datetime.utcnow().isoformat() + "Z"
+        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         meta = {
             "title_original": title,
             "slug": slug,
@@ -255,7 +253,7 @@ def update_workspace(workspace_path: Path, editable_content: str) -> str:
     meta_path = workspace_path / "meta.json"
     if meta_path.exists():
         meta = read_json(meta_path)
-        meta["updated_at"] = datetime.utcnow().isoformat() + "Z"
+        meta["updated_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         write_json(meta_path, meta)
 
     return restored_content

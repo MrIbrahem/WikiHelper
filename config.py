@@ -2,6 +2,7 @@
 # Flask application configuration
 
 import os
+import warnings
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -14,7 +15,15 @@ class Config:
     """Flask configuration class."""
 
     # Secret key for session security
-    SECRET_KEY = os.environ.get("FLASK_SECRET_KEY", "change-me-in-production")
+    _secret_key = os.environ.get("FLASK_SECRET_KEY")
+    if not _secret_key:
+        warnings.warn(
+            "FLASK_SECRET_KEY not set. Using default key which is insecure for production!",
+            UserWarning,
+            stacklevel=2
+        )
+        _secret_key = "change-me-in-production"
+    SECRET_KEY = _secret_key
 
     # Root directory for workspaces
     WIKI_WORK_ROOT = Path(os.environ.get("WIKI_WORK_ROOT", "./data")).resolve()

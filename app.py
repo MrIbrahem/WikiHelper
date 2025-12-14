@@ -2,6 +2,7 @@
 # Flask application for Wiki Ref Workspace Manager
 
 from pathlib import Path
+from urllib.parse import quote
 
 from flask import Flask, render_template, request, redirect, url_for, flash, abort, Response
 from flask_wtf.csrf import CSRFProtect
@@ -174,10 +175,12 @@ def create_app(config_class=Config):
         else:
             content_type = "text/plain"
 
+        # Safely encode the filename for Content-Disposition header
+        safe_filename = quote(name, safe="")
         return Response(
             content,
             mimetype=content_type,
-            headers={"Content-Disposition": f"attachment;filename={name}"}
+            headers={"Content-Disposition": f"attachment; filename*=UTF-8''{safe_filename}"}
         )
 
     return app
