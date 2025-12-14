@@ -1,7 +1,7 @@
 
-from . import app_bot, config
+from . import app, config
 
 __all__ = [
-    "app_bot",
+    "app",
     "config"
 ]
