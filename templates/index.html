@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Wiki Ref Manager{% endblock %}
+
+{% block content %}
+<h1>Workspaces</h1>
+
+{% if workspaces %}
+<table class="workspace-table">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Slug</th>
+            <th>References</th>
+            <th>Created</th>
+            <th>Updated</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ws in workspaces %}
+        <tr>
+            <td>{{ ws.title }}</td>
+            <td><code>{{ ws.slug }}</code></td>
+            <td>{{ ws.refs_count }}</td>
+            <td>{{ ws.created_at[:10] if ws.created_at else 'N/A' }}</td>
+            <td>{{ ws.updated_at[:10] if ws.updated_at else 'N/A' }}</td>
+            <td class="actions">
+                <a href="{{ url_for('edit_workspace', slug=ws.slug) }}" class="btn btn-primary">Edit</a>
+                <a href="{{ url_for('browse_workspace', slug=ws.slug) }}" class="btn btn-secondary">Browse</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="no-data">No workspaces found. <a href="{{ url_for('new_workspace') }}">Create one</a>.</p>
+{% endif %}
+{% endblock %}
