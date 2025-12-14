@@ -117,7 +117,7 @@ pip install -r requirements.txt
 flask run
 
 # Test extraction (example)
-python -c "from extract_refs_wtp import extract_refs_from_text; print(extract_refs_from_text('Hello <ref>world</ref>'))"
+python -c "from wikiops.refs import extract_refs_from_text; print(extract_refs_from_text('Hello <ref>world</ref>'))"
 ```
 
 ## Questions to Consider When Coding

@@ -1,8 +1,8 @@
 # tests/test_refs_roundtrip.py
 # Tests for round-trip integrity
 
-from extract_refs_wtp import extract_refs_from_text
-from restore_refs_wtp import restore_refs_in_text
+from wikiops.refs import extract_refs_from_text
+from wikiops.refs import restore_refs_in_text
 
 
 def test_roundtrip_preserves_original(mixed_refs_wikitext):

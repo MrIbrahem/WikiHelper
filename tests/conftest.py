@@ -1,7 +1,11 @@
 # tests/conftest.py
 # Shared pytest fixtures for WikiHelper tests
 
+import sys
 import pytest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent/"src"))
 
 
 @pytest.fixture

@@ -1,7 +1,7 @@
 # tests/test_edge_cases.py
 # Tests for edge cases
 
-from extract_refs_wtp import extract_refs_from_text
+from wikiops.refs import extract_refs_from_text
 
 
 def test_text_without_refs():

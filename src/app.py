@@ -1,13 +1,12 @@
 # app.py
 # Flask application for Wiki Ref Workspace Manager
 
-from pathlib import Path
 from urllib.parse import quote
 
 from flask import Flask, render_template, request, redirect, url_for, flash, abort, Response, jsonify
 from flask_wtf.csrf import CSRFProtect
 
-from config import Config
+from werkzeug.exceptions import RequestEntityTooLarge
 from wikiops.storage import (
     list_workspaces,
     create_workspace,
@@ -16,7 +15,7 @@ from wikiops.storage import (
     read_text,
     get_workspace_file
 )
-from werkzeug.exceptions import RequestEntityTooLarge
+from config import Config
 
 
 # def create_app(config_class=Config):
@@ -54,6 +53,15 @@ def new_workspace():
         title = request.form.get("title", "").strip()
         wikitext = request.form.get("wikitext", "")
 
+        # Check if a file was uploaded
+        file = request.files.get('wikitext_file')
+        if file and file.filename:
+            try:
+                wikitext = file.read().decode('utf-8')
+            except UnicodeDecodeError:
+                flash("Uploaded file must be UTF-8 encoded text.", "error")
+                return render_template("new.html", title=title, wikitext=wikitext)
+
         # Validate title
         if not title:
             flash("Title is required.", "error")
@@ -65,7 +73,10 @@ def new_workspace():
 
         # Validate wikitext
         if not wikitext:
-            flash("WikiText content is required.", "error")
+            if file and file.filename:
+                flash("Uploaded file is empty or does not contain valid text.", "error")
+            else:
+                flash("WikiText content is required.", "error")
             return render_template("new.html", title=title, wikitext=wikitext)
 
         try:
