@@ -74,7 +74,10 @@ def new_workspace():
 
         # Validate wikitext
         if not wikitext:
-            flash("WikiText content is required.", "error")
+            if file and file.filename:
+                flash("Uploaded file is empty or does not contain valid text.", "error")
+            else:
+                flash("WikiText content is required.", "error")
             return render_template("new.html", title=title, wikitext=wikitext)
 
         try:
