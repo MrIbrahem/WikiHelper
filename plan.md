@@ -205,3 +205,4 @@ Flask python-dotenv wikitextparser Flask-WTF
 - Make deterministic decisions where unspecified
 - Document assumptions in README
 - Do not ask the user follow-up questions during implementation
+- Always use UTF-8 encoding when reading from or writing to files to ensure consistent handling of multilingual content
