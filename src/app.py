@@ -54,6 +54,15 @@ def new_workspace():
         title = request.form.get("title", "").strip()
         wikitext = request.form.get("wikitext", "")
 
+        # Check if a file was uploaded
+        file = request.files.get('wikitext_file')
+        if file and file.filename:
+            try:
+                wikitext = file.read().decode('utf-8')
+            except UnicodeDecodeError:
+                flash("Uploaded file must be UTF-8 encoded text.", "error")
+                return render_template("new.html", title=title, wikitext=wikitext)
+
         # Validate title
         if not title:
             flash("Title is required.", "error")
