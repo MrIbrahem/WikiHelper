@@ -2,10 +2,10 @@
 # Shared pytest fixtures for WikiHelper tests
 
 import sys
-import os
 import pytest
+from pathlib import Path
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent/"src"))
 
 
 @pytest.fixture

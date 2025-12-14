@@ -1,13 +1,12 @@
 # app.py
 # Flask application for Wiki Ref Workspace Manager
 
-from pathlib import Path
 from urllib.parse import quote
 
 from flask import Flask, render_template, request, redirect, url_for, flash, abort, Response, jsonify
 from flask_wtf.csrf import CSRFProtect
 
-from config import Config
+from werkzeug.exceptions import RequestEntityTooLarge
 from wikiops.storage import (
     list_workspaces,
     create_workspace,
@@ -16,7 +15,7 @@ from wikiops.storage import (
     read_text,
     get_workspace_file
 )
-from werkzeug.exceptions import RequestEntityTooLarge
+from config import Config
 
 
 # def create_app(config_class=Config):

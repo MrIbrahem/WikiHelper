@@ -1,7 +1,7 @@
 # tests/test_refs_extract.py
 # Tests for ref extraction logic
 
-from src.wikiops.refs import extract_refs_from_text
+from wikiops.refs import extract_refs_from_text
 
 
 def test_extract_single_ref(simple_wikitext):

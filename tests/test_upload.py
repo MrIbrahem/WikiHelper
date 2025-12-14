@@ -1,10 +1,6 @@
 
 import io
 import unittest
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from app import app
 
 
@@ -95,7 +91,7 @@ class TestFileUpload(unittest.TestCase):
 
         print(f"\nSaved line count: {saved_line_count}")
         print(f"Saved text:\n{saved_text}")
-        print(f"=" * 50)
+        print("=" * 50)
 
         # Print line-by-line comparison
         print("\n=== Line-by-Line Comparison ===")
