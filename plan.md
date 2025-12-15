@@ -176,7 +176,7 @@ original.wiki     # immutable original input refs.json         # immutable extra
 
 ### `.env.example`
 
-WIKI_WORK_ROOT=./data FLASK_SECRET_KEY=change-me FLASK_DEBUG=1
+WIKI_WORK_ROOT=$HOME/data FLASK_SECRET_KEY=change-me FLASK_DEBUG=1
 
 ---
 

@@ -91,7 +91,7 @@ Environment variables (set in `.env` file):
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `WIKI_WORK_ROOT` | Root directory for workspaces | `./data` |
+| `WIKI_WORK_ROOT` | Root directory for workspaces | `$HOME/data` |
 | `FLASK_SECRET_KEY` | Secret key for sessions/CSRF | `change-me-in-production` |
 | `FLASK_DEBUG` | Enable debug mode (0 or 1) | `0` |
 | `MAX_CONTENT_LENGTH` | Maximum upload size in bytes | `5242880` (5MB) |
