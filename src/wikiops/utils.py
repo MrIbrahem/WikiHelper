@@ -7,8 +7,8 @@ def fix_space_before_section(content: str) -> str:
     """
     Fix section headers that have space before the equal signs.
     """
-    #  =Header to =Header
-    content = re.sub(r"^( +)(=+)", r"\g<2>", content, flags=re.MULTILINE)
+    # ( ==Header==) to (==Header==)
+    content = re.sub(r"^( +)(=+[^=]+=+)", r"\g<2>", content, flags=re.MULTILINE)
 
     return content
 
@@ -17,9 +17,12 @@ def fix_sections_space(content: str) -> str:
     """
     Fix section headers that lack spaces around the text.
     """
-    # ==text== to == text ==
-    content = re.sub(r"^(=+)([^\s=])(=+)$", r"\g<1> \g<2> \g<1>", content, flags=re.MULTILINE)
-
+    # (==text==) to (== text ==)
+    # (==text 2==) to (== text 2 ==)
+    # (==text 2 ==) to (== text 2 ==)
+    # (====text    2 ====) to (==== text    2 ====)
+    # (===  text ! ===) to (=== text ! ===)
+    content = re.sub(r"^(=+)([^\s=].*?[^\s=])(\1)$", r"\1 \2 \3", content, flags=re.MULTILINE)
     return content
 
 
@@ -28,8 +31,6 @@ def fix_some_issues(content: str) -> str:
     Fix some common issues in the content before writing to file.
     """
     content = fix_space_before_section(content)
-
-    # ==text== to == text ==
     content = fix_sections_space(content)
 
     return content
