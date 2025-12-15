@@ -5,11 +5,36 @@
 {% block content %}
 <h1>Edit Workspace: <code>{{ slug }}</code></h1>
 
-<p class="breadcrumb">
+<script>
+    // document.addEventListener('DOMContentLoaded', function () {
+    function changeDirection(direction) {
+        const textarea = document.getElementById('editable_content');
+        if (direction === 'rtl') {
+            textarea.classList.remove('ltr-mode');
+            textarea.classList.add('rtl-mode');
+        } else {
+            textarea.classList.remove('rtl-mode');
+            textarea.classList.add('ltr-mode');
+        }
+    }
+
+    // });
+</script>
+
+<!-- <p class="breadcrumb">
     <a href="{{ url_for('index') }}">Home</a> &raquo;
     <a href="{{ url_for('browse_workspace', slug=slug) }}">{{ slug }}</a> &raquo;
     Edit
-</p>
+</p> -->
+
+<div class="dir-switch">
+    <button class="dir-btn" onclick="changeDirection('ltr')" title="Left to Right">
+        <span class="icon">→</span> LTR
+    </button>
+    <button class="dir-btn" onclick="changeDirection('rtl')" title="Right to Left">
+        <span class="icon">←</span> RTL
+    </button>
+</div>
 
 <form method="POST" class="edit-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -20,7 +45,8 @@
             Edit the text below. References have been replaced with placeholders like [ref1], [ref2], etc.
             Keep these placeholders if you want to preserve the references.
         </small>
-        <textarea id="editable_content" name="editable_content" rows="25" class="editor">{{ editable_content }}</textarea>
+        <textarea id="editable_content" name="editable_content" rows="25"
+            class="editor">{{ editable_content }}</textarea>
     </div>
 
     <div class="form-actions">

@@ -130,8 +130,8 @@ class TestFixSectionsSpace:
 
     def test_multiple_equals(self):
         """Test with multiple equal signs."""
-        content = "===subsection==="
-        expected = "=== subsection ==="
+        content = "11\n\n==الانتخابات والانتقال والتنصيب==\n\n"
+        expected = "11\n\n== الانتخابات والانتقال والتنصيب ==\n\n"
         result = fix_sections_space(content)
         assert result == expected
 

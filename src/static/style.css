@@ -72,7 +72,7 @@ nav {
 main.container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem 1rem;
+    padding: 1rem 1rem;
     flex: 1;
 }
 
@@ -174,7 +174,8 @@ table {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-th, td {
+th,
+td {
     padding: 0.75rem 1rem;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
@@ -202,7 +203,8 @@ tbody tr:hover {
 }
 
 /* Forms */
-.workspace-form, .edit-form {
+.workspace-form,
+.edit-form {
     background-color: var(--card-bg);
     padding: 1.5rem;
     border-radius: 0.5rem;
@@ -245,8 +247,8 @@ tbody tr:hover {
     padding: 0.625rem;
     border: 1px solid var(--border-color);
     border-radius: 0.375rem;
-    font-size: 0.875rem;
-    font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", monospace;
+    /* font-size: 0.875rem;
+    font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", monospace; */
     resize: vertical;
 }
 
@@ -406,16 +408,62 @@ code {
         flex-direction: column;
         gap: 1rem;
     }
-    
+
     .nav-links {
         gap: 1rem;
     }
-    
+
     td.actions {
         flex-direction: column;
     }
-    
-    .file-actions, .form-actions {
+
+    .file-actions,
+    .form-actions {
         flex-wrap: wrap;
     }
+}
+
+.rtl-mode {
+    direction: rtl;
+    text-align: right;
+    /* Optional: aligns text insertion point to the right */
+}
+
+.ltr-mode {
+    direction: ltr;
+    text-align: left;
+}
+
+.dir-switch {
+    display: inline-flex;
+    gap: 6px;
+}
+
+.dir-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #f9f9f9;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dir-btn:hover {
+    background: #eaeaea;
+    border-color: #999;
+}
+
+.dir-btn.active {
+    background: #1f2937;
+    color: #fff;
+    border-color: #1f2937;
+}
+
+.dir-btn .icon {
+    font-size: 14px;
 }
