@@ -2,7 +2,7 @@
 # Flask application for Wiki Ref Workspace Manager
 
 from urllib.parse import quote
-
+import sys
 from flask import Flask, render_template, request, redirect, url_for, flash, abort, Response, jsonify
 from flask_wtf.csrf import CSRFProtect
 
@@ -121,8 +121,8 @@ def edit_workspace(slug: str):
             editable_content = read_text(editable_path)
     else:
         editable_content = read_text(editable_path)
-        if restored_path.exists():
-            restored_content = read_text(restored_path)
+        # if restored_path.exists():
+        #     restored_content = read_text(restored_path)
 
     # Load meta for display
     meta_content = get_workspace_file(workspace_path, "meta.json")
@@ -211,4 +211,5 @@ def download_file(slug: str, name: str):
 
 
 if __name__ == "__main__":
-    app.run(debug=app.config["DEBUG"], host="0.0.0.0", port=5000)
+    debug = app.config["DEBUG"] or "debug" in sys.argv
+    app.run(debug=debug, host="0.0.0.0", port=5000)
