@@ -5,12 +5,32 @@
 {% block content %}
 <h1>Edit Workspace: <code>{{ slug }}</code></h1>
 
+<script>
+    // document.addEventListener('DOMContentLoaded', function () {
+    function changeDirection(direction) {
+        const textarea = document.getElementById('editable_content');
+        if (direction === 'rtl') {
+            textarea.classList.remove('ltr-mode');
+            textarea.classList.add('rtl-mode');
+        } else {
+            textarea.classList.remove('rtl-mode');
+            textarea.classList.add('ltr-mode');
+        }
+    }
+
+    // });
+</script>
+
 <!-- <p class="breadcrumb">
     <a href="{{ url_for('index') }}">Home</a> &raquo;
     <a href="{{ url_for('browse_workspace', slug=slug) }}">{{ slug }}</a> &raquo;
     Edit
 </p> -->
 
+<div class="direction-controls" style="margin-bottom: 10px;">
+    <button onclick="changeDirection('ltr')">LTR</button>
+    <button onclick="changeDirection('rtl')">RTL</button>
+</div>
 <form method="POST" class="edit-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 

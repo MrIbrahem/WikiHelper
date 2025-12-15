@@ -174,7 +174,8 @@ table {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-th, td {
+th,
+td {
     padding: 0.75rem 1rem;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
@@ -202,7 +203,8 @@ tbody tr:hover {
 }
 
 /* Forms */
-.workspace-form, .edit-form {
+.workspace-form,
+.edit-form {
     background-color: var(--card-bg);
     padding: 1.5rem;
     border-radius: 0.5rem;
@@ -415,7 +417,19 @@ code {
         flex-direction: column;
     }
 
-    .file-actions, .form-actions {
+    .file-actions,
+    .form-actions {
         flex-wrap: wrap;
     }
+}
+
+.rtl-mode {
+    direction: rtl;
+    text-align: right;
+    /* Optional: aligns text insertion point to the right */
+}
+
+.ltr-mode {
+    direction: ltr;
+    text-align: left;
 }
