@@ -21,7 +21,7 @@ jobs:
           script_stop: true
           key: ${{ secrets.KEY }}
           script: |
-            become armake bash -lc "
+            become lyan bash -lc "
               rm -rf ~/WikiHelper &&
               git clone https://github.com/MrIbrahem/WikiHelper.git &&
               chmod -R 770 ~/WikiHelper &&
