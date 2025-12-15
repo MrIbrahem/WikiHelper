@@ -3,16 +3,34 @@ import re
 import unicodedata
 
 
+def fix_space_before_section(content: str) -> str:
+    """
+    Fix section headers that have space before the equal signs.
+    """
+    #  =Header to =Header
+    content = re.sub(r"^( +)(=+)", r"\g<2>", content, flags=re.MULTILINE)
+
+    return content
+
+
+def fix_sections_space(content: str) -> str:
+    """
+    Fix section headers that lack spaces around the text.
+    """
+    # ==text== to == text ==
+    content = re.sub(r"^(=+)([^\s=])(=+)$", r"\g<1> \g<2> \g<1>", content, flags=re.MULTILINE)
+
+    return content
+
+
 def fix_some_issues(content: str) -> str:
     """
     Fix some common issues in the content before writing to file.
     """
-    # Normalize line endings to LF
-    # any line start with space then = should be fixed to remove leading spaces
-    content = re.sub(r"^( +)=", lambda m: "=" + m.group(1), content, flags=re.MULTILINE)
+    content = fix_space_before_section(content)
 
     # ==text== to == text ==
-    content = re.sub(r"^(=+)([^\s=])(\1)$", r"\g<1> \g<2> \g<1>", content, flags=re.MULTILINE)
+    content = fix_sections_space(content)
 
     return content
 
