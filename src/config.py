@@ -26,7 +26,9 @@ class Config:
     SECRET_KEY = _secret_key
 
     # Root directory for workspaces
-    WIKI_WORK_ROOT = Path(os.environ.get("WIKI_WORK_ROOT", "./data")).resolve()
+    ALTERNATIVE_PATH = os.environ.get("HOME", ".") + "/data"
+
+    WIKI_WORK_ROOT = Path(os.environ.get("WIKI_WORK_ROOT") or ALTERNATIVE_PATH).resolve()
 
     # Maximum content length (5MB)
     MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", 500 * 1024 * 1024))
