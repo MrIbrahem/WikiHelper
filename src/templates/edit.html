@@ -27,10 +27,15 @@
     Edit
 </p> -->
 
-<div class="direction-controls" style="margin-bottom: 10px;">
-    <button onclick="changeDirection('ltr')">LTR</button>
-    <button onclick="changeDirection('rtl')">RTL</button>
+<div class="dir-switch">
+    <button class="dir-btn" onclick="changeDirection('ltr')" title="Left to Right">
+        <span class="icon">→</span> LTR
+    </button>
+    <button class="dir-btn" onclick="changeDirection('rtl')" title="Right to Left">
+        <span class="icon">←</span> RTL
+    </button>
 </div>
+
 <form method="POST" class="edit-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
