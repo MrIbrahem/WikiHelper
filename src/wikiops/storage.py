@@ -5,45 +5,12 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-import unicodedata
-
-
-def slugify_title(title: str) -> str:
-    """
-    Convert a title to a safe slug for use as a folder name.
-
-    - Normalize Unicode to NFKD form
-    - Convert to lowercase
-    - Replace spaces and special characters with hyphens
-    - Allow only alphanumeric, hyphen, and underscore
-    - Remove consecutive hyphens
-    - Strip leading/trailing hyphens
-    """
-    # Normalize Unicode characters
-    normalized = unicodedata.normalize("NFKD", title)
-
-    # Encode to ASCII, ignoring non-ASCII characters
-    ascii_str = normalized.encode("ascii", "ignore").decode("ascii")
-
-    # Convert to lowercase
-    lower = ascii_str.lower()
-
-    # Replace any non-alphanumeric characters with hyphen
-    slug = re.sub(r"[^a-z0-9]+", "-", lower)
-
-    # Remove consecutive hyphens
-    slug = re.sub(r"-+", "-", slug)
-
-    # Strip leading/trailing hyphens
-    slug = slug.strip("-")
-
-    return slug
+from .utils import fix_some_issues, slugify_title
 
 
 def safe_workspace_path(root: Path, slug: str) -> Optional[Path]:
@@ -94,7 +61,7 @@ def atomic_write(path: Path, content: str, encoding: str = "utf-8") -> None:
     # Create temp file in the same directory to ensure atomic rename
     dir_path = path.parent
     dir_path.mkdir(parents=True, exist_ok=True)
-
+    content = fix_some_issues(content)
     fd, temp_path = tempfile.mkstemp(dir=str(dir_path), suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding=encoding) as f:

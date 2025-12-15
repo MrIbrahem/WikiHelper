@@ -36,7 +36,7 @@ jobs:
           script_stop: true
           key: ${{ secrets.KEY }}
           script: |
-            become armake bash -lc "
+            become lyan bash -lc "
               rm -rf ~/WikiHelper &&
               cp -r /mnt/nfs/labstore-secondary-tools-home/${{ secrets.USERNAME }}/wikihelper_temp ~/WikiHelper &&
               chmod -R 770 ~/WikiHelper &&

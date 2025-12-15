@@ -23,16 +23,16 @@ On submission:
 1. Generate a **safe slug** from the title.
 2. Create a folder named after the slug inside a root directory defined by an environment variable.
 3. Inside the folder, create exactly **four files**:
-   1. `original.wiki`  
+   1. `original.wiki`
       - Stores the original WikiText exactly as entered.
       - Written once only.
-   2. `refs.json`  
+   2. `refs.json`
       - JSON map of extracted `<ref>` tags.
       - Written once only.
-   3. `editable.wiki`  
+   3. `editable.wiki`
       - WikiText with `<ref>` tags replaced by placeholders `[ref1]`, `[ref2]`, etc.
       - User-editable.
-   4. `restored.wiki`  
+   4. `restored.wiki`
       - Result of restoring references after user edits.
       - Updated automatically by the system.
 
@@ -176,7 +176,7 @@ original.wiki     # immutable original input refs.json         # immutable extra
 
 ### `.env.example`
 
-WIKI_WORK_ROOT=./data FLASK_SECRET_KEY=change-me FLASK_DEBUG=1
+WIKI_WORK_ROOT=$HOME/data FLASK_SECRET_KEY=change-me FLASK_DEBUG=1
 
 ---
 

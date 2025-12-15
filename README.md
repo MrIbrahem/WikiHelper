@@ -91,7 +91,7 @@ Environment variables (set in `.env` file):
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `WIKI_WORK_ROOT` | Root directory for workspaces | `./data` |
+| `WIKI_WORK_ROOT` | Root directory for workspaces | `$HOME/data` |
 | `FLASK_SECRET_KEY` | Secret key for sessions/CSRF | `change-me-in-production` |
 | `FLASK_DEBUG` | Enable debug mode (0 or 1) | `0` |
 | `MAX_CONTENT_LENGTH` | Maximum upload size in bytes | `5242880` (5MB) |
@@ -148,15 +148,15 @@ Each reference is replaced with a numbered placeholder like `[ref1]`, `[ref2]`, 
 
 **Input WikiText:**
 ```wikitext
-Albert Einstein was a theoretical physicist<ref>Born March 14, 1879</ref> who developed 
-the theory of relativity<ref name="nobel">Nobel Prize in Physics, 1921</ref>. His work 
+Albert Einstein was a theoretical physicist<ref>Born March 14, 1879</ref> who developed
+the theory of relativity<ref name="nobel">Nobel Prize in Physics, 1921</ref>. His work
 is referenced frequently<ref name="nobel" />.
 ```
 
 **Output (Editable Text):**
 ```wikitext
-Albert Einstein was a theoretical physicist[ref1] who developed 
-the theory of relativity[ref2]. His work 
+Albert Einstein was a theoretical physicist[ref1] who developed
+the theory of relativity[ref2]. His work
 is referenced frequently[ref3].
 ```
 
@@ -177,15 +177,15 @@ When you save your edits, WikiHelper scans for `[refN]` placeholders and replace
 
 **Edited Text (with placeholders):**
 ```wikitext
-Albert Einstein was a renowned theoretical physicist[ref1] best known for developing 
-the theory of relativity[ref2]. His groundbreaking work 
+Albert Einstein was a renowned theoretical physicist[ref1] best known for developing
+the theory of relativity[ref2]. His groundbreaking work
 is referenced frequently in modern physics[ref3].
 ```
 
 **Output (Restored WikiText):**
 ```wikitext
-Albert Einstein was a renowned theoretical physicist<ref>Born March 14, 1879</ref> best known for developing 
-the theory of relativity<ref name="nobel">Nobel Prize in Physics, 1921</ref>. His groundbreaking work 
+Albert Einstein was a renowned theoretical physicist<ref>Born March 14, 1879</ref> best known for developing
+the theory of relativity<ref name="nobel">Nobel Prize in Physics, 1921</ref>. His groundbreaking work
 is referenced frequently in modern physics<ref name="nobel" />.
 ```
 
