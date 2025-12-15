@@ -67,7 +67,7 @@ class TestSlugifyTitle:
         result = slugify_title(title)
         assert result == expected
 
-    @pytest.mark.skip(reason="Demonstration of recent edits")
+    # @pytest.mark.skip(reason="Demonstration of recent edits")
     def test_underscores_allowed(self):
         """Test that underscores are allowed."""
         title = "hello_world"

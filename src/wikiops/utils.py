@@ -58,7 +58,7 @@ def slugify_title(title: str) -> str:
     lower = ascii_str.lower()
 
     # Replace any non-alphanumeric characters with hyphen
-    slug = re.sub(r"[^a-z0-9]+", "-", lower)
+    slug = re.sub(r"[^a-z0-9_]+", "-", lower)
 
     # Remove consecutive hyphens
     slug = re.sub(r"-+", "-", slug)
