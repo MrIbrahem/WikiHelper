@@ -78,7 +78,7 @@ nav {
 
 /* Main Content */
 main.container {
-    max-width: 1200px;
+    width: 76rem;
     margin: 0 auto;
     padding: 1rem 1rem;
     flex: 1;
@@ -259,16 +259,19 @@ tbody tr:hover {
     font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", monospace; */
     resize: vertical;
 }
+
 .h2 {
     font-size: 1.5rem;
     color: var(--text-color);
     font-weight: 600;
 }
+
 .nav-link {
     text-decoration: none;
     color: var(--text-color);
     font-weight: 500;
 }
+
 .form-group textarea:focus {
     outline: none;
     border-color: var(--primary-color);
