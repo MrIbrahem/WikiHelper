@@ -56,6 +56,14 @@ nav {
     list-style: none;
     display: flex;
     gap: 1.5rem;
+    align-items: center;
+}
+
+.nav-user {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    border-right: 1px solid var(--border-color);
+    padding-right: 1rem;
 }
 
 .nav-links a {

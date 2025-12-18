@@ -3,7 +3,7 @@
 
 from urllib.parse import quote
 import sys
-from flask import Flask, render_template, request, redirect, url_for, flash, abort, Response, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, Response, jsonify, make_response
 from flask_wtf.csrf import CSRFProtect
 
 from werkzeug.exceptions import RequestEntityTooLarge
@@ -32,6 +32,59 @@ root = app.config["WIKI_WORK_ROOT"]
 root.mkdir(parents=True, exist_ok=True)
 
 
+def get_user_root():
+    """Get the root directory for the current user based on cookies."""
+    username = request.cookies.get("username")
+    if not username:
+        return None
+    user_root = root / username
+    user_root.mkdir(parents=True, exist_ok=True)
+    return user_root
+
+
+@app.before_request
+def check_user():
+    """Redirect to set_user if username cookie is missing, except for set_user and static files."""
+    if request.endpoint in ["set_user", "static"]:
+        return
+
+    if not request.cookies.get("username"):
+        return redirect(url_for("set_user", next=request.url))
+
+
+@app.route("/set_user", methods=["GET", "POST"])
+def set_user():
+    """Set the username cookie."""
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        if not username:
+            flash("Username is required.", "error")
+            return render_template("set_user.html")
+
+        # Basic validation for username to be used as folder name
+        from wikiops.utils import slugify_title
+        safe_username = slugify_title(username)
+        if not safe_username:
+            flash("Invalid username.", "error")
+            return render_template("set_user.html")
+
+        next_url = request.args.get("next") or url_for("index")
+        resp = make_response(redirect(next_url))
+        resp.set_cookie("username", safe_username, max_age=30*24*60*60) # 30 days
+        return resp
+
+    return render_template("set_user.html")
+
+
+@app.route("/logout")
+def logout():
+    """Clear the username cookie."""
+    resp = make_response(redirect(url_for("set_user")))
+    resp.delete_cookie("username")
+    flash("Logged out successfully.", "info")
+    return resp
+
+
 @app.errorhandler(RequestEntityTooLarge)
 def handle_large_request(e):
     return jsonify({
@@ -43,7 +96,11 @@ def handle_large_request(e):
 @app.route("/")
 def index():
     """Dashboard - list all workspaces."""
-    all_workspaces = list_workspaces(root)
+    user_root = get_user_root()
+    if not user_root:
+        return redirect(url_for("set_user"))
+
+    all_workspaces = list_workspaces(user_root)
     active_workspaces = [ws for ws in all_workspaces if ws.get("status") != "done"]
     done_workspaces = [ws for ws in all_workspaces if ws.get("status") == "done"]
     return render_template(
@@ -56,6 +113,10 @@ def index():
 @app.route("/new", methods=["GET", "POST"])
 def new_workspace():
     """Create a new workspace."""
+    user_root = get_user_root()
+    if not user_root:
+        return redirect(url_for("set_user"))
+
     if request.method == "POST":
         title = request.form.get("title", "").strip()
         wikitext = request.form.get("wikitext", "")
@@ -87,7 +148,7 @@ def new_workspace():
             return render_template("new.html", title=title, wikitext=wikitext)
 
         try:
-            slug, workspace_path, is_new = create_workspace(root, title, wikitext)
+            slug, workspace_path, is_new = create_workspace(user_root, title, wikitext)
 
             if is_new:
                 flash(f"Workspace '{slug}' created successfully.", "success")
@@ -106,7 +167,11 @@ def new_workspace():
 @app.route("/w/<slug>/edit", methods=["GET", "POST"])
 def edit_workspace(slug: str):
     """Edit workspace's editable.wiki."""
-    workspace_path = safe_workspace_path(root, slug)
+    user_root = get_user_root()
+    if not user_root:
+        return redirect(url_for("set_user"))
+
+    workspace_path = safe_workspace_path(user_root, slug)
     if workspace_path is None or not workspace_path.exists():
         abort(404)
 
@@ -145,7 +210,11 @@ def edit_workspace(slug: str):
 @app.route("/w/<slug>/browse")
 def browse_workspace(slug: str):
     """Browse workspace files."""
-    workspace_path = safe_workspace_path(root, slug)
+    user_root = get_user_root()
+    if not user_root:
+        return redirect(url_for("set_user"))
+
+    workspace_path = safe_workspace_path(user_root, slug)
     if workspace_path is None or not workspace_path.exists():
         abort(404)
 
@@ -174,7 +243,11 @@ def browse_workspace(slug: str):
 @app.route("/w/<slug>/file/<name>")
 def view_file(slug: str, name: str):
     """View a specific file in the workspace."""
-    workspace_path = safe_workspace_path(root, slug)
+    user_root = get_user_root()
+    if not user_root:
+        return redirect(url_for("set_user"))
+
+    workspace_path = safe_workspace_path(user_root, slug)
     if workspace_path is None or not workspace_path.exists():
         abort(404)
 
@@ -193,7 +266,11 @@ def view_file(slug: str, name: str):
 @app.route("/w/<slug>/download/<name>")
 def download_file(slug: str, name: str):
     """Download a specific file from the workspace."""
-    workspace_path = safe_workspace_path(root, slug)
+    user_root = get_user_root()
+    if not user_root:
+        return redirect(url_for("set_user"))
+
+    workspace_path = safe_workspace_path(user_root, slug)
     if workspace_path is None or not workspace_path.exists():
         abort(404)
 
