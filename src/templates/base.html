@@ -11,10 +11,12 @@
 <body>
     <header>
         <nav>
-            <div class="nav-brand">Wiki Ref Manager</div>
+            <div class="nav-brand">
+                <a href="{{ url_for('index') }}" class="nav-link">Wiki Ref Manager</a>
+            </div>
             <ul class="nav-links">
-                <li><a href="{{ url_for('index') }}">Home</a></li>
-                <li><a href="{{ url_for('new_workspace') }}">New Workspace</a></li>
+                <!-- <li><a href="{{ url_for('index') }}" class="nav-link">Home</a></li> -->
+                <li><a href="{{ url_for('new_workspace') }}" class="nav-link">New Workspace</a></li>
             </ul>
         </nav>
     </header>
