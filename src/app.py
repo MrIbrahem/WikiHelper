@@ -13,6 +13,7 @@ from wikiops.storage import (
     update_workspace,
     safe_workspace_path,
     read_text,
+    read_json,
     get_workspace_file
 )
 from config import Config
@@ -110,7 +111,6 @@ def edit_workspace(slug: str):
         abort(404)
 
     editable_path = workspace_path / "editable.wiki"
-    restored_path = workspace_path / "restored.wiki"
 
     if not editable_path.exists():
         abort(404)
@@ -130,14 +130,15 @@ def edit_workspace(slug: str):
         editable_content = read_text(editable_path)
 
     # Load meta for display
-    meta_content = get_workspace_file(workspace_path, "meta.json")
+    meta_path = workspace_path / "meta.json"
+    meta = read_json(meta_path) if meta_path.exists() else {}
 
     return render_template(
         "edit.html",
         slug=slug,
         editable_content=editable_content,
         restored_content=restored_content,
-        meta=meta_content
+        meta=meta
     )
 
 
