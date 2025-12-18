@@ -15,7 +15,10 @@
                 <a href="{{ url_for('index') }}" class="nav-link">Wiki Ref Manager</a>
             </div>
             <ul class="nav-links">
-                <!-- <li><a href="{{ url_for('index') }}" class="nav-link">Home</a></li> -->
+                {% if request.cookies.get('username') %}
+                <li class="nav-user">User: <strong>{{ request.cookies.get('username') }}</strong></li>
+                <li><a href="{{ url_for('logout') }}" class="nav-link">Logout</a></li>
+                {% endif %}
                 <li><a href="{{ url_for('new_workspace') }}" class="nav-link">New Workspace</a></li>
             </ul>
         </nav>
