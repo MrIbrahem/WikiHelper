@@ -123,6 +123,7 @@ def list_workspaces(root: Path) -> list:
                         "created_at": meta.get("created_at", ""),
                         "updated_at": meta.get("updated_at", ""),
                         "refs_count": meta.get("refs_count", 0),
+                        "status": meta.get("status", "processing"),
                         "path": item
                     })
                 except (json.JSONDecodeError, OSError):
@@ -185,6 +186,7 @@ def create_workspace(root: Path, title: str, wikitext: str) -> tuple:
             "slug": slug,
             "created_at": now,
             "updated_at": now,
+            "status": "processing",
             "refs_count": len(refs_map)
         }
         meta_path = workspace_path / "meta.json"
