@@ -195,7 +195,7 @@ def create_workspace(root: Path, title: str, wikitext: str) -> tuple:
     return slug, workspace_path, is_new
 
 
-def update_workspace(workspace_path: Path, editable_content: str) -> str:
+def update_workspace(workspace_path: Path, editable_content: str, status: Optional[str] = None) -> str:
     """
     Update workspace's editable.wiki and generate restored.wiki.
 
@@ -223,6 +223,8 @@ def update_workspace(workspace_path: Path, editable_content: str) -> str:
     if meta_path.exists():
         meta = read_json(meta_path)
         meta["updated_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        if status:
+            meta["status"] = status
         write_json(meta_path, meta)
 
     return restored_content
