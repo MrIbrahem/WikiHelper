@@ -5,7 +5,8 @@
 {% block content %}
 <h1>Workspaces</h1>
 
-{% if workspaces %}
+<h2>Active Workspaces</h2>
+{% if active_workspaces %}
 <table class="workspace-table">
     <thead>
         <tr>
@@ -14,17 +15,19 @@
             <th>References</th>
             <th>Created</th>
             <th>Updated</th>
+            <th>Status</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
-        {% for ws in workspaces %}
+        {% for ws in active_workspaces %}
         <tr>
             <td>{{ ws.title }}</td>
             <td><code>{{ ws.slug }}</code></td>
             <td>{{ ws.refs_count }}</td>
             <td>{{ ws.created_at[:10] if ws.created_at else 'N/A' }}</td>
             <td>{{ ws.updated_at[:10] if ws.updated_at else 'N/A' }}</td>
+            <td>{{ ws.status }}</td>
             <td class="actions">
                 <a href="{{ url_for('edit_workspace', slug=ws.slug) }}" class="btn btn-primary">Edit</a>
                 <a href="{{ url_for('browse_workspace', slug=ws.slug) }}" class="btn btn-secondary">Browse</a>
@@ -34,6 +37,39 @@
     </tbody>
 </table>
 {% else %}
-<p class="no-data">No workspaces found. <a href="{{ url_for('new_workspace') }}">Create one</a>.</p>
+<p class="no-data">No active workspaces found. <a href="{{ url_for('new_workspace') }}">Create one</a>.</p>
+{% endif %}
+
+{% if done_workspaces %}
+<h2 style="margin-top: 2rem;">Completed Workspaces</h2>
+<table class="workspace-table">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Slug</th>
+            <th>References</th>
+            <th>Created</th>
+            <th>Updated</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ws in done_workspaces %}
+        <tr>
+            <td>{{ ws.title }}</td>
+            <td><code>{{ ws.slug }}</code></td>
+            <td>{{ ws.refs_count }}</td>
+            <td>{{ ws.created_at[:10] if ws.created_at else 'N/A' }}</td>
+            <td>{{ ws.updated_at[:10] if ws.updated_at else 'N/A' }}</td>
+            <td>{{ ws.status }}</td>
+            <td class="actions">
+                <a href="{{ url_for('edit_workspace', slug=ws.slug) }}" class="btn btn-primary">Edit</a>
+                <a href="{{ url_for('browse_workspace', slug=ws.slug) }}" class="btn btn-secondary">Browse</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% endif %}
 {% endblock %}

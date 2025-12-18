@@ -123,6 +123,7 @@ def list_workspaces(root: Path) -> list:
                         "created_at": meta.get("created_at", ""),
                         "updated_at": meta.get("updated_at", ""),
                         "refs_count": meta.get("refs_count", 0),
+                        "status": meta.get("status", "processing"),
                         "path": item
                     })
                 except (json.JSONDecodeError, OSError):
@@ -185,6 +186,7 @@ def create_workspace(root: Path, title: str, wikitext: str) -> tuple:
             "slug": slug,
             "created_at": now,
             "updated_at": now,
+            "status": "processing",
             "refs_count": len(refs_map)
         }
         meta_path = workspace_path / "meta.json"
@@ -193,7 +195,7 @@ def create_workspace(root: Path, title: str, wikitext: str) -> tuple:
     return slug, workspace_path, is_new
 
 
-def update_workspace(workspace_path: Path, editable_content: str) -> str:
+def update_workspace(workspace_path: Path, editable_content: str, status: Optional[str] = None) -> str:
     """
     Update workspace's editable.wiki and generate restored.wiki.
 
@@ -221,6 +223,8 @@ def update_workspace(workspace_path: Path, editable_content: str) -> str:
     if meta_path.exists():
         meta = read_json(meta_path)
         meta["updated_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        if status:
+            meta["status"] = status
         write_json(meta_path, meta)
 
     return restored_content

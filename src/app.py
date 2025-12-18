@@ -13,6 +13,7 @@ from wikiops.storage import (
     update_workspace,
     safe_workspace_path,
     read_text,
+    read_json,
     get_workspace_file
 )
 from config import Config
@@ -42,8 +43,14 @@ def handle_large_request(e):
 @app.route("/")
 def index():
     """Dashboard - list all workspaces."""
-    workspaces = list_workspaces(root)
-    return render_template("index.html", workspaces=workspaces)
+    all_workspaces = list_workspaces(root)
+    active_workspaces = [ws for ws in all_workspaces if ws.get("status") != "done"]
+    done_workspaces = [ws for ws in all_workspaces if ws.get("status") == "done"]
+    return render_template(
+        "index.html",
+        active_workspaces=active_workspaces,
+        done_workspaces=done_workspaces
+    )
 
 
 @app.route("/new", methods=["GET", "POST"])
@@ -104,7 +111,6 @@ def edit_workspace(slug: str):
         abort(404)
 
     editable_path = workspace_path / "editable.wiki"
-    restored_path = workspace_path / "restored.wiki"
 
     if not editable_path.exists():
         abort(404)
@@ -112,27 +118,27 @@ def edit_workspace(slug: str):
     restored_content = ""
     if request.method == "POST":
         editable_content = request.form.get("editable_content", "")
+        status = request.form.get("status")
 
         try:
-            restored_content = update_workspace(workspace_path, editable_content)
+            restored_content = update_workspace(workspace_path, editable_content, status=status)
             flash("Workspace updated and references restored.", "success")
         except Exception as e:
             flash(f"Error updating workspace: {e}", "error")
             editable_content = read_text(editable_path)
     else:
         editable_content = read_text(editable_path)
-        # if restored_path.exists():
-        #     restored_content = read_text(restored_path)
 
     # Load meta for display
-    meta_content = get_workspace_file(workspace_path, "meta.json")
+    meta_path = workspace_path / "meta.json"
+    meta = read_json(meta_path) if meta_path.exists() else {}
 
     return render_template(
         "edit.html",
         slug=slug,
         editable_content=editable_content,
         restored_content=restored_content,
-        meta=meta_content
+        meta=meta
     )
 
 

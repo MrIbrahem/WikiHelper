@@ -27,31 +27,45 @@
     Edit
 </p> -->
 
-<div class="dir-switch">
-    <button class="dir-btn" onclick="changeDirection('ltr')" title="Left to Right">
-        <span class="icon">→</span> LTR
-    </button>
-    <button class="dir-btn" onclick="changeDirection('rtl')" title="Right to Left">
-        <span class="icon">←</span> RTL
-    </button>
-</div>
+<form method="POST">
+    <div class="editor-toolbar">
+        <div class="dir-switch">
+            <button type="button" class="dir-btn" onclick="changeDirection('ltr')" title="Left to Right">
+                <span class="icon">→</span> LTR
+            </button>
+            <button type="button" class="dir-btn" onclick="changeDirection('rtl')" title="Right to Left">
+                <span class="icon">←</span> RTL
+            </button>
+        </div>
 
-<form method="POST" class="edit-form">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+            <label for="status">Status</label>
+            <select name="status" id="status" class="form-control">
+                <option value="processing" {% if meta and meta.status == 'processing' %}selected{% endif %}>Processing
+                </option>
+                <option value="done" {% if meta and meta.status == 'done' %}selected{% endif %}>Done</option>
+            </select>
+        </div>
 
-    <div class="form-group">
-        <label for="editable_content">Editable Content (editable.wiki)</label>
-        <small>
-            Edit the text below. References have been replaced with placeholders like [ref1], [ref2], etc.
-            Keep these placeholders if you want to preserve the references.
-        </small>
-        <textarea id="editable_content" name="editable_content" rows="25"
-            class="editor">{{ editable_content }}</textarea>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save &amp; Restore References</button>
+            <a href="{{ url_for('browse_workspace', slug=slug) }}" class="btn btn-secondary">Browse Files</a>
+        </div>
     </div>
 
-    <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Save &amp; Restore References</button>
-        <a href="{{ url_for('browse_workspace', slug=slug) }}" class="btn btn-secondary">Browse Files</a>
+    <div class="edit-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="form-group">
+            <label for="editable_content">Editable Content (editable.wiki)</label>
+            <small>
+                Edit the text below. References have been replaced with placeholders like [ref1], [ref2], etc.
+                Keep these placeholders if you want to preserve the references.
+            </small>
+            <textarea id="editable_content" name="editable_content" rows="25"
+                class="editor">{{ editable_content }}</textarea>
+        </div>
+
     </div>
 </form>
 
