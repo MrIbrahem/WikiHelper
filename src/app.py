@@ -164,7 +164,7 @@ def new_workspace():
     return render_template("new.html")
 
 
-@app.route("/w/<slug>/edit", methods=["GET", "POST"])
+@app.route("/w/<slug>/edit")
 def edit_workspace(slug: str):
     """Edit workspace's editable.wiki."""
     user_root = get_user_root()
@@ -180,23 +180,15 @@ def edit_workspace(slug: str):
     if not editable_path.exists():
         abort(404)
 
-    restored_content = ""
-    if request.method == "POST":
-        editable_content = request.form.get("editable_content", "")
-        status = request.form.get("status")
-
-        try:
-            restored_content = update_workspace(workspace_path, editable_content, status=status)
-            flash("Workspace updated and references restored.", "success")
-        except Exception as e:
-            flash(f"Error updating workspace: {e}", "error")
-            editable_content = read_text(editable_path)
-    else:
-        editable_content = read_text(editable_path)
+    editable_content = read_text(editable_path)
 
     # Load meta for display
     meta_path = workspace_path / "meta.json"
     meta = read_json(meta_path) if meta_path.exists() else {}
+
+    # Read restored content for preview
+    restored_path = workspace_path / "restored.wiki"
+    restored_content = read_text(restored_path) if restored_path.exists() else ""
 
     return render_template(
         "edit.html",
@@ -205,6 +197,29 @@ def edit_workspace(slug: str):
         restored_content=restored_content,
         meta=meta
     )
+
+
+@app.route("/w/<slug>/save", methods=["POST"])
+def save_workspace(slug: str):
+    """Save workspace's editable.wiki and restore references."""
+    user_root = get_user_root()
+    if not user_root:
+        return redirect(url_for("set_user"))
+
+    workspace_path = safe_workspace_path(user_root, slug)
+    if workspace_path is None or not workspace_path.exists():
+        abort(404)
+
+    editable_content = request.form.get("editable_content", "")
+    status = request.form.get("status")
+
+    try:
+        update_workspace(workspace_path, editable_content, status=status)
+        flash("Workspace updated and references restored.", "success")
+    except Exception as e:
+        flash(f"Error updating workspace: {e}", "error")
+
+    return redirect(url_for("edit_workspace", slug=slug))
 
 
 @app.route("/w/<slug>/browse")

@@ -27,7 +27,7 @@
     Edit
 </p> -->
 
-<form method="POST">
+<form action="{{ url_for('save_workspace', slug=slug) }}" method="POST">
     <div class="editor-toolbar">
         <div class="dir-switch">
             <button type="button" class="dir-btn" onclick="changeDirection('ltr')" title="Left to Right">
