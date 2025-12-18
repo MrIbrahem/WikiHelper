@@ -216,10 +216,10 @@ def save_workspace(slug: str):
     try:
         update_workspace(workspace_path, editable_content, status=status)
         flash("Workspace updated and references restored.", "success")
+        return redirect(url_for("view_file", slug=slug, name="restored.wiki"))
     except Exception as e:
         flash(f"Error updating workspace: {e}", "error")
-
-    return redirect(url_for("edit_workspace", slug=slug))
+        return redirect(url_for("edit_workspace", slug=slug))
 
 
 @app.route("/w/<slug>/browse")
