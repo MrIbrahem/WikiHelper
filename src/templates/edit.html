@@ -28,28 +28,31 @@
 </p> -->
 
 <form method="POST">
-    <div class="dir-switch">
-        <button class="dir-btn" onclick="changeDirection('ltr')" title="Left to Right">
-            <span class="icon">→</span> LTR
-        </button>
-        <button class="dir-btn" onclick="changeDirection('rtl')" title="Right to Left">
-            <span class="icon">←</span> RTL
-        </button>
+    <div class="editor-toolbar">
+        <div class="dir-switch">
+            <button type="button" class="dir-btn" onclick="changeDirection('ltr')" title="Left to Right">
+                <span class="icon">→</span> LTR
+            </button>
+            <button type="button" class="dir-btn" onclick="changeDirection('rtl')" title="Right to Left">
+                <span class="icon">←</span> RTL
+            </button>
+        </div>
+
+        <div class="form-group">
+            <label for="status">Status</label>
+            <select name="status" id="status" class="form-control">
+                <option value="processing" {% if meta and meta.status == 'processing' %}selected{% endif %}>Processing
+                </option>
+                <option value="done" {% if meta and meta.status == 'done' %}selected{% endif %}>Done</option>
+            </select>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save &amp; Restore References</button>
+            <a href="{{ url_for('browse_workspace', slug=slug) }}" class="btn btn-secondary">Browse Files</a>
+        </div>
     </div>
 
-    <div class="form-group">
-        <label for="status">Status</label>
-        <select name="status" id="status" class="form-control">
-            <option value="processing" {% if meta and meta.status == 'processing' %}selected{% endif %}>Processing
-            </option>
-            <option value="done" {% if meta and meta.status == 'done' %}selected{% endif %}>Done</option>
-        </select>
-    </div>
-
-    <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Save &amp; Restore References</button>
-        <a href="{{ url_for('browse_workspace', slug=slug) }}" class="btn btn-secondary">Browse Files</a>
-    </div>
     <div class="edit-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
