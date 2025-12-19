@@ -42,7 +42,7 @@
         </div>
     </div>
     <div class="card-body">
-        <pre id="file-content" class="bg-body-secondary p-3 rounded mb-0 overflow-auto" style="max-height: 600px; white-space: pre-wrap; word-wrap: break-word;">{{ content }}</pre>
+        <pre id="file-content" class="bg-body-secondary p-3 rounded mb-0 overflow-auto" style="max-height: 600px; white-space: pre-wrap; word-wrap: break-word;">{{ content|e }}</pre>
     </div>
 </div>
 {% endblock %}

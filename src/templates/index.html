@@ -134,8 +134,9 @@
 <script>
 $(document).ready(function() {
     // Initialize DataTables for active workspaces
-    if ($('#activeWorkspacesTable tbody tr').length > 0) {
-        $('#activeWorkspacesTable').DataTable({
+    var activeTable = $('#activeWorkspacesTable');
+    if (activeTable.length && activeTable.find('tbody tr').length > 0) {
+        activeTable.DataTable({
             responsive: true,
             pageLength: 10,
             lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
@@ -152,8 +153,9 @@ $(document).ready(function() {
     }
     
     // Initialize DataTables for completed workspaces
-    if ($('#doneWorkspacesTable').length && $('#doneWorkspacesTable tbody tr').length > 0) {
-        $('#doneWorkspacesTable').DataTable({
+    var doneTable = $('#doneWorkspacesTable');
+    if (doneTable.length && doneTable.find('tbody tr').length > 0) {
+        doneTable.DataTable({
             responsive: true,
             pageLength: 10,
             lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],

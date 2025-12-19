@@ -101,8 +101,9 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
-    if ($('#filesTable tbody tr').length > 0) {
-        $('#filesTable').DataTable({
+    var filesTable = $('#filesTable');
+    if (filesTable.length && filesTable.find('tbody tr').length > 0) {
+        filesTable.DataTable({
             responsive: true,
             paging: false,
             searching: false,
