@@ -1,10 +1,19 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="light">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Wiki Ref Manager{% endblock %}</title>
+    <!-- Set theme immediately to prevent flash -->
+    <script>
+        (function() {
+            const storedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = storedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-bs-theme', theme);
+        })();
+    </script>
     <!-- Bootstrap 5.3 CSS from cdnjs -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet" integrity="sha512-jnSuA4Ss2PkkikSOLtYs8BlYIeeIK1h99ty4YfvRPAlzr377vr3CXDb7sb7eEEBYjDtcYj+AjBH3FLv5uSJuXg==" crossorigin="anonymous" referrerpolicy="no-referrer">
     <!-- Bootstrap Icons from cdnjs -->
@@ -104,24 +113,6 @@
             const lightIcon = document.getElementById('theme-icon-light');
             const darkIcon = document.getElementById('theme-icon-dark');
             
-            function getStoredTheme() {
-                return localStorage.getItem('theme');
-            }
-            
-            function getPreferredTheme() {
-                const storedTheme = getStoredTheme();
-                if (storedTheme) {
-                    return storedTheme;
-                }
-                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            }
-            
-            function setTheme(theme) {
-                htmlEl.setAttribute('data-bs-theme', theme);
-                localStorage.setItem('theme', theme);
-                updateIcon(theme);
-            }
-            
             function updateIcon(theme) {
                 if (theme === 'dark') {
                     lightIcon.classList.add('d-none');
@@ -132,8 +123,14 @@
                 }
             }
             
-            // Set initial theme
-            setTheme(getPreferredTheme());
+            function setTheme(theme) {
+                htmlEl.setAttribute('data-bs-theme', theme);
+                localStorage.setItem('theme', theme);
+                updateIcon(theme);
+            }
+            
+            // Update icon to match current theme (set in head)
+            updateIcon(htmlEl.getAttribute('data-bs-theme') || 'light');
             
             // Toggle theme on click
             themeToggle.addEventListener('click', function() {
@@ -144,7 +141,7 @@
             
             // Listen for system preference changes
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
-                if (!getStoredTheme()) {
+                if (!localStorage.getItem('theme')) {
                     setTheme(e.matches ? 'dark' : 'light');
                 }
             });
