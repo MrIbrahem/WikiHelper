@@ -182,7 +182,6 @@ def import_wikipedia():
             return render_template("import_wikipedia.html", article_title=article_title)
 
         # Fetch article content from Wikipedia
-        flash(f"Fetching article '{article_title}' from Wikipedia...", "info")
         wikitext, error = fetch_wikipedia_article(article_title)
 
         if error:

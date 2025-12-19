@@ -6,6 +6,13 @@ from __future__ import annotations
 from typing import Optional, Tuple
 import requests
 
+# Wikipedia API endpoint URL (configurable for testing)
+WIKIPEDIA_API_URL = "https://en.wikipedia.org/w/api.php"
+
+# User-Agent header for Wikipedia API requests
+# Following Wikimedia's User-Agent policy: https://meta.wikimedia.org/wiki/User-Agent_policy
+USER_AGENT = "WikiHelper/1.0 (https://github.com/MrIbrahem/WikiHelper; WikiText reference manager)"
+
 
 def fetch_wikipedia_article(title: str, timeout: int = 10) -> Tuple[Optional[str], Optional[str]]:
     """
@@ -25,10 +32,8 @@ def fetch_wikipedia_article(title: str, timeout: int = 10) -> Tuple[Optional[str
     
     title = title.strip()
     
-    # Wikipedia API endpoint
-    api_url = "https://en.wikipedia.org/w/api.php"
-    
     # Parameters for the API request
+    # formatversion=2 provides cleaner response format with consistent data types
     params = {
         "action": "parse",
         "page": title,
@@ -37,9 +42,14 @@ def fetch_wikipedia_article(title: str, timeout: int = 10) -> Tuple[Optional[str
         "formatversion": "2"
     }
     
+    # Headers including User-Agent for Wikipedia API compliance
+    headers = {
+        "User-Agent": USER_AGENT
+    }
+    
     try:
-        # Make the API request
-        response = requests.get(api_url, params=params, timeout=timeout)
+        # Make the API request with proper User-Agent header
+        response = requests.get(WIKIPEDIA_API_URL, params=params, headers=headers, timeout=timeout)
         response.raise_for_status()
         
         data = response.json()
@@ -59,17 +69,21 @@ def fetch_wikipedia_article(title: str, timeout: int = 10) -> Tuple[Optional[str
         return None, "Could not extract wikitext from Wikipedia response"
         
     except requests.exceptions.Timeout:
-        return None, f"Request timed out after {timeout} seconds"
+        return None, "Request timed out. Please try again."
     except requests.exceptions.ConnectionError:
-        return None, "Failed to connect to Wikipedia API"
+        return None, "Failed to connect to Wikipedia API. Please check your internet connection."
     except requests.exceptions.HTTPError as e:
-        return None, f"HTTP error: {e}"
-    except requests.exceptions.RequestException as e:
-        return None, f"Request error: {e}"
-    except ValueError as e:
-        return None, f"Failed to parse JSON response: {e}"
-    except Exception as e:
-        return None, f"Unexpected error: {e}"
+        # Provide user-friendly error without exposing internal details
+        status_code = e.response.status_code if e.response else "unknown"
+        if status_code == 429:
+            return None, "Too many requests. Please wait a moment and try again."
+        return None, f"Wikipedia API returned an error (HTTP {status_code}). Please try again later."
+    except requests.exceptions.RequestException:
+        return None, "Failed to retrieve article from Wikipedia. Please try again."
+    except ValueError:
+        return None, "Received invalid response from Wikipedia API. Please try again."
+    except Exception:
+        return None, "An unexpected error occurred. Please try again."
 
 
 def validate_article_title(title: str, max_length: int = 255) -> Tuple[bool, Optional[str]]:

@@ -70,6 +70,12 @@ class TestFetchWikipediaArticle:
         assert wikitext == "Article content here"
         assert error is None
         mock_get.assert_called_once()
+        
+        # Verify User-Agent header is included
+        call_args = mock_get.call_args
+        assert 'headers' in call_args.kwargs
+        assert 'User-Agent' in call_args.kwargs['headers']
+        assert 'WikiHelper' in call_args.kwargs['headers']['User-Agent']
 
     @patch('wikiops.wikipedia.requests.get')
     def test_fetch_missing_article(self, mock_get):
@@ -161,7 +167,7 @@ class TestFetchWikipediaArticle:
         
         assert wikitext is None
         assert error is not None
-        assert "json" in error.lower()
+        assert "invalid response" in error.lower() or "api" in error.lower()
 
     @patch('wikiops.wikipedia.requests.get')
     def test_fetch_missing_wikitext_field(self, mock_get):
