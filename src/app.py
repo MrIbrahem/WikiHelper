@@ -16,6 +16,7 @@ from wikiops.storage import (
     read_json,
     get_workspace_file
 )
+from wikiops.wikipedia import fetch_wikipedia_article, validate_article_title
 from config import Config
 
 
@@ -162,6 +163,52 @@ def new_workspace():
             return render_template("new.html", title=title, wikitext=wikitext)
 
     return render_template("new.html")
+
+
+@app.route("/import-wikipedia", methods=["GET", "POST"])
+def import_wikipedia():
+    """Import an article from English Wikipedia to create a new workspace."""
+    user_root = get_user_root()
+    if not user_root:
+        return redirect(url_for("set_user"))
+
+    if request.method == "POST":
+        article_title = request.form.get("article_title", "").strip()
+
+        # Validate article title
+        is_valid, error_msg = validate_article_title(article_title)
+        if not is_valid:
+            flash(error_msg, "error")
+            return render_template("import_wikipedia.html", article_title=article_title)
+
+        # Fetch article content from Wikipedia
+        flash(f"Fetching article '{article_title}' from Wikipedia...", "info")
+        wikitext, error = fetch_wikipedia_article(article_title)
+
+        if error:
+            flash(error, "error")
+            return render_template("import_wikipedia.html", article_title=article_title)
+
+        if not wikitext:
+            flash("Retrieved empty content from Wikipedia.", "error")
+            return render_template("import_wikipedia.html", article_title=article_title)
+
+        # Create workspace with the fetched content
+        try:
+            slug, workspace_path, is_new = create_workspace(user_root, article_title, wikitext)
+
+            if is_new:
+                flash(f"Successfully imported '{article_title}' from Wikipedia.", "success")
+            else:
+                flash(f"Workspace '{slug}' already exists. Redirecting to edit.", "info")
+
+            return redirect(url_for("edit_workspace", slug=slug))
+
+        except ValueError as e:
+            flash(str(e), "error")
+            return render_template("import_wikipedia.html", article_title=article_title)
+
+    return render_template("import_wikipedia.html")
 
 
 @app.route("/w/<slug>/edit", methods=["GET", "POST"])

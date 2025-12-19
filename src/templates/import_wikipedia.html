@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Import from Wikipedia - Wiki Ref Manager{% endblock %}
+{% block content %}
+<h1>Import from Wikipedia</h1>
+
+<p class="info-text">
+  Import an article directly from English Wikipedia (en.wikipedia.org) to create a new workspace.
+  The article's wikitext will be fetched automatically, and references will be extracted for editing.
+</p>
+
+<form method="POST" class="workspace-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+  <div class="form-group">
+    <label for="article_title">Wikipedia Article Title</label>
+    <input
+      type="text"
+      id="article_title"
+      name="article_title"
+      value="{{ article_title or '' }}"
+      required
+      maxlength="255"
+      placeholder="e.g., Albert Einstein, Python (programming language)"
+      autofocus
+    />
+    <small>
+      Enter the exact title of the article as it appears on Wikipedia.
+      Article titles are case-sensitive.
+    </small>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">Import Article</button>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+  </div>
+</form>
+
+<div class="help-section">
+  <h2>Tips for Finding Article Titles</h2>
+  <ul>
+    <li>Visit <a href="https://en.wikipedia.org" target="_blank" rel="noopener">en.wikipedia.org</a> to search for articles</li>
+    <li>Copy the article title exactly as it appears in the page heading</li>
+    <li>Spaces are allowed (e.g., "New York City")</li>
+    <li>Parenthetical disambiguations are supported (e.g., "Mercury (planet)")</li>
+  </ul>
+</div>
+{% endblock %}
