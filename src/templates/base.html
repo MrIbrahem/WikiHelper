@@ -5,31 +5,82 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Wiki Ref Manager{% endblock %}</title>
+    <!-- Set theme immediately to prevent flash -->
+    <script>
+        (function() {
+            const storedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = storedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-bs-theme', theme);
+        })();
+    </script>
+    <!-- Bootstrap 5.3 CSS from cdnjs -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet" integrity="sha512-jnSuA4Ss2PkkikSOLtYs8BlYIeeIK1h99ty4YfvRPAlzr377vr3CXDb7sb7eEEBYjDtcYj+AjBH3FLv5uSJuXg==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Bootstrap Icons from cdnjs -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha512-dPXYcDub/aeb08c63jRq/k6GqJ8Tv2M59BvpIpiOxaqV9dYvN256PPjLi9JcJYsCGJ9YQAIV0FKjdnfQMwxfTg==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- DataTables Bootstrap 5 CSS from cdnjs -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-bs5/1.13.8/dataTables.bootstrap5.min.css" rel="stylesheet" integrity="sha512-uX3hbCQP8FfLISpsmZLEk4DmfO9LBLqhRnSdCBe2P2TaxYT6mephWQPV8r1kdUXjB1vKBEWUhpEx/0SoKgZT1A==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-responsive-bs5/2.5.0/responsive.bootstrap5.min.css" rel="stylesheet" integrity="sha512-exepmLRmP78MqyOQhEC8G2P3p26KDldVi2/xizIv3LBTQvESaXzd32eT6hS26kXlsYXHsHKS+EnXPN4c9Sflbg==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Custom styles (minimal) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% block extra_css %}{% endblock %}
 </head>
 
 <body>
-    <header>
-        <nav>
-            <div class="nav-brand">
-                <a href="{{ url_for('index') }}" class="nav-link">Wiki Ref Manager</a>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="{{ url_for('index') }}">
+                <i class="bi bi-wikipedia me-2"></i>Wiki Ref Manager
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('new_workspace') }}">
+                            <i class="bi bi-plus-circle me-1"></i>New Workspace
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('import_wikipedia') }}">
+                            <i class="bi bi-cloud-download me-1"></i>Import from Wikipedia
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    {% if request.cookies.get('username') %}
+                    <li class="nav-item">
+                        <span class="nav-link text-body-secondary">
+                            <i class="bi bi-person-circle me-1"></i>{{ request.cookies.get('username') }}
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">
+                            <i class="bi bi-box-arrow-right me-1"></i>Logout
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <button class="btn btn-link nav-link" id="theme-toggle" type="button" title="Toggle dark mode" aria-label="Toggle dark mode">
+                            <i class="bi bi-sun-fill" id="theme-icon-light"></i>
+                            <i class="bi bi-moon-fill d-none" id="theme-icon-dark"></i>
+                        </button>
+                    </li>
+                </ul>
             </div>
-            <ul class="nav-links">
-                {% if request.cookies.get('username') %}
-                <li class="nav-user">User: <strong>{{ request.cookies.get('username') }}</strong></li>
-                <li><a href="{{ url_for('logout') }}" class="nav-link">Logout</a></li>
-                {% endif %}
-                <li><a href="{{ url_for('new_workspace') }}" class="nav-link">New Workspace</a></li>
-            </ul>
-        </nav>
-    </header>
+        </div>
+    </nav>
 
-    <main class="container">
+    <main class="container py-4">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-        <div class="flash-messages">
+        <div class="mb-4">
             {% for category, message in messages %}
-            <div class="flash flash-{{ category }}">{{ message }}</div>
+            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'info' }} alert-dismissible fade show" role="alert">
+                <i class="bi bi-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'error' else 'info-circle' }} me-2"></i>{{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
             {% endfor %}
         </div>
         {% endif %}
@@ -38,9 +89,65 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer>
-        <p>&copy; Wiki Ref Workspace Manager</p>
+    <footer class="bg-body-tertiary border-top py-3 mt-auto">
+        <div class="container text-center text-body-secondary">
+            <small>&copy; Wiki Ref Workspace Manager</small>
+        </div>
     </footer>
+
+    <!-- jQuery from cdnjs (required for DataTables) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2ber+X7nw3hSN7x+dPe7Iue1Zg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- Bootstrap 5.3 JS Bundle from cdnjs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js" integrity="sha512-7Pi/otdlbbCR+LnW+F7PwFcSDJOuUJB3OxtEHbg4vSMvzvJjde4Po1v4BR9Gdc9aXNUNFVUY+SK51wWT8WF0Gg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- DataTables JS from cdnjs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net/1.13.8/jquery.dataTables.min.js" integrity="sha512-sQGwGZLiEoEAeWc1+xN/CCMA4QvFuPjGcMdhlZ5kRIbxtGol9E8O8hAdQH/ZJnGvuunVjqYm+FL49h746fXjgg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-bs5/1.13.8/dataTables.bootstrap5.min.js" integrity="sha512-In2GKq1W0++mF4sDEBfB6bCxHlbiDi5vZDXKvMHwmvVvImJ/R7d6Vz7gdGO+WR7XTBB6B3tO6F1xplQUPdQGtA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-responsive/2.5.0/dataTables.responsive.min.js" integrity="sha512-dC4sL+Xxi/TX/5Msd0J0SmUsjnPq3Rp/g67j92f3LeauJO/zXeBg+4BJTO8MxF0mYy/lqDaH5F4JN4WHXg/bCA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-responsive-bs5/2.5.0/responsive.bootstrap5.min.js" integrity="sha512-FLQg9ywFYoAxhTfLC+nPDsrJqbBfOAFqjWEj7RTnw1D0u2k51uguF6kflQQFh1jHYX/mTb/VKYro7V1woWIDpQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
+    <!-- Dark mode toggle script -->
+    <script>
+        (function() {
+            const htmlEl = document.documentElement;
+            const themeToggle = document.getElementById('theme-toggle');
+            const lightIcon = document.getElementById('theme-icon-light');
+            const darkIcon = document.getElementById('theme-icon-dark');
+            
+            function updateIcon(theme) {
+                if (theme === 'dark') {
+                    lightIcon.classList.add('d-none');
+                    darkIcon.classList.remove('d-none');
+                } else {
+                    lightIcon.classList.remove('d-none');
+                    darkIcon.classList.add('d-none');
+                }
+            }
+            
+            function setTheme(theme) {
+                htmlEl.setAttribute('data-bs-theme', theme);
+                localStorage.setItem('theme', theme);
+                updateIcon(theme);
+            }
+            
+            // Update icon to match current theme (set in head)
+            updateIcon(htmlEl.getAttribute('data-bs-theme') || 'light');
+            
+            // Toggle theme on click
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = htmlEl.getAttribute('data-bs-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                setTheme(newTheme);
+            });
+            
+            // Listen for system preference changes
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+                if (!localStorage.getItem('theme')) {
+                    setTheme(e.matches ? 'dark' : 'light');
+                }
+            });
+        })();
+    </script>
+    {% block extra_js %}{% endblock %}
 </body>
 
 </html>
