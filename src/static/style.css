@@ -454,7 +454,7 @@ textarea.editor {
 .help-section {
     margin-top: 2rem;
     padding: 1.5rem;
-    background-color: #f9fafb;
+    background-color: var(--bg-color);
     border-radius: 0.5rem;
     border: 1px solid var(--border-color);
 }
@@ -533,8 +533,6 @@ code {
     .btn {
         padding: 0.625rem 1rem;
         font-size: 0.9375rem;
-        width: 100%;
-        text-align: center;
     }
 
     .form-actions {
@@ -544,6 +542,7 @@ code {
 
     .form-actions .btn {
         width: 100%;
+        text-align: center;
     }
 
     td.actions {
