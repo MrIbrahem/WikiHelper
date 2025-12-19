@@ -3,29 +3,66 @@
 {% block title %}{{ filename }} - {{ slug }} - Wiki Ref Manager{% endblock %}
 
 {% block content %}
-<h1>View File: <code>{{ filename }}</code></h1>
-
-<p class="breadcrumb">
-    <a href="{{ url_for('index') }}">Home</a> &raquo;
-    <a href="{{ url_for('browse_workspace', slug=slug) }}">{{ slug }}</a> &raquo;
-    {{ filename }}
-</p>
-
-<div class="file-actions">
-    <a href="{{ url_for('browse_workspace', slug=slug) }}" class="btn btn-secondary">Back to Files</a>
-    <a href="{{ url_for('download_file', slug=slug, name=filename) }}" class="btn btn-primary">Download</a>
-    <button onclick="copyToClipboard()" class="btn btn-secondary">Copy Content</button>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+    <div class="d-flex align-items-center mb-3 mb-md-0">
+        <a href="{{ url_for('browse_workspace', slug=slug) }}" class="btn btn-outline-secondary me-3">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="mb-0">
+            <i class="bi bi-file-earmark-text me-2 text-primary"></i>View: <code class="fs-4">{{ filename }}</code>
+        </h1>
+    </div>
 </div>
 
-<div class="file-content">
-    <pre id="file-content">{{ content }}</pre>
-</div>
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('index') }}"><i class="bi bi-house me-1"></i>Home</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('browse_workspace', slug=slug) }}">{{ slug }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ filename }}</li>
+    </ol>
+</nav>
 
+<!-- File Content Card -->
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
+        <h5 class="mb-0">
+            <i class="bi bi-file-code me-2"></i>{{ filename }}
+        </h5>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('browse_workspace', slug=slug) }}" class="btn btn-sm btn-light">
+                <i class="bi bi-arrow-left me-1"></i>Back to Files
+            </a>
+            <a href="{{ url_for('download_file', slug=slug, name=filename) }}" class="btn btn-sm btn-light">
+                <i class="bi bi-download me-1"></i>Download
+            </a>
+            <button onclick="copyToClipboard()" class="btn btn-sm btn-light" type="button">
+                <i class="bi bi-clipboard me-1"></i>Copy
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <pre id="file-content" class="bg-body-secondary p-3 rounded mb-0 overflow-auto" style="max-height: 600px; white-space: pre-wrap; word-wrap: break-word;">{{ content }}</pre>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
 function copyToClipboard() {
-    var content = document.getElementById('file-content').innerText;
+    const content = document.getElementById('file-content').innerText;
     navigator.clipboard.writeText(content).then(function() {
-        alert('Content copied to clipboard!');
+        // Show feedback
+        const btn = event.target.closest('button');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check me-1"></i>Copied!';
+        btn.classList.add('btn-success');
+        btn.classList.remove('btn-light');
+        setTimeout(function() {
+            btn.innerHTML = originalHtml;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-light');
+        }, 2000);
     }, function(err) {
         alert('Failed to copy content.');
     });

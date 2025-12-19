@@ -1,57 +1,66 @@
-{% extends "base.html" %} {% block title %}New Workspace - Wiki Ref Manager{%
-endblock %} {% block content %}
-<h1>Create New Workspace</h1>
+{% extends "base.html" %}
 
-<form method="POST" enctype="multipart/form-data" class="workspace-form">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+{% block title %}New Workspace - Wiki Ref Manager{% endblock %}
 
-  <div class="form-group">
-    <label for="title">Title</label>
-    <input
-      type="text"
-      id="title"
-      name="title"
-      value="{{ title or '' }}"
-      required
-      maxlength="120"
-      placeholder="Enter workspace title"
-    />
-    <small>A safe slug will be generated from this title.</small>
-  </div>
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-10 col-xl-8">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary me-3">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <h1 class="mb-0">
+                <i class="bi bi-plus-circle me-2 text-primary"></i>Create New Workspace
+            </h1>
+        </div>
 
-  <div class="form-group">
-    <label for="wikitext_file">Upload WikiText File</label>
-    <input
-      type="file"
-      id="wikitext_file"
-      name="wikitext_file"
-      accept=".wiki,.txt,.md"
-    />
-    <small
-      >Upload a file containing WikiText content. If uploaded, this will
-      override the text below.</small
-    >
-  </div>
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-file-earmark-text me-2"></i>Workspace Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-  <div class="form-group">
-    <label for="wikitext">Or Paste WikiText Content</label>
-    <textarea
-      id="wikitext"
-      name="wikitext"
-      rows="20"
-      placeholder="Paste your WikiText content here..."
-    >
-{{ wikitext or '' }}</textarea
-    >
-    <small>
-      References (&lt;ref&gt;...&lt;/ref&gt; and &lt;ref ... /&gt;) will be
-      extracted and replaced with placeholders [ref1], [ref2], etc.
-    </small>
-  </div>
+                    <div class="mb-4">
+                        <label for="title" class="form-label fw-medium">
+                            <i class="bi bi-tag me-1"></i>Title <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="title" name="title" value="{{ title or '' }}" required maxlength="120" placeholder="Enter workspace title">
+                        <div class="form-text">A safe slug will be generated from this title.</div>
+                    </div>
 
-  <div class="form-actions">
-    <button type="submit" class="btn btn-primary">Create Workspace</button>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
-  </div>
-</form>
+                    <div class="mb-4">
+                        <label for="wikitext_file" class="form-label fw-medium">
+                            <i class="bi bi-upload me-1"></i>Upload WikiText File
+                        </label>
+                        <input type="file" class="form-control" id="wikitext_file" name="wikitext_file" accept=".wiki,.txt,.md">
+                        <div class="form-text">Upload a file containing WikiText content. If uploaded, this will override the text below.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="wikitext" class="form-label fw-medium">
+                            <i class="bi bi-code me-1"></i>Or Paste WikiText Content
+                        </label>
+                        <textarea class="form-control font-monospace" id="wikitext" name="wikitext" rows="15" placeholder="Paste your WikiText content here...">{{ wikitext or '' }}</textarea>
+                        <div class="form-text">
+                            References (<code>&lt;ref&gt;...&lt;/ref&gt;</code> and <code>&lt;ref ... /&gt;</code>) will be extracted and replaced with placeholders [ref1], [ref2], etc.
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-column flex-sm-row gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i>Create Workspace
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle me-1"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

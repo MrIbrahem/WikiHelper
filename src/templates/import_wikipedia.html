@@ -1,47 +1,86 @@
 {% extends "base.html" %}
+
 {% block title %}Import from Wikipedia - Wiki Ref Manager{% endblock %}
+
 {% block content %}
-<h1>Import from Wikipedia</h1>
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-10 col-xl-8">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary me-3">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <h1 class="mb-0">
+                <i class="bi bi-cloud-download me-2 text-primary"></i>Import from Wikipedia
+            </h1>
+        </div>
 
-<p class="info-text">
-  Import an article directly from English Wikipedia (en.wikipedia.org) to create a new workspace.
-  The article's wikitext will be fetched automatically, and references will be extracted for editing.
-</p>
+        <!-- Import Form Card -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-wikipedia me-2"></i>Import Article
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-body-secondary mb-4">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Import an article directly from English Wikipedia (en.wikipedia.org) to create a new workspace.
+                    The article's wikitext will be fetched automatically, and references will be extracted for editing.
+                </p>
 
-<form method="POST" class="workspace-form">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-  <div class="form-group">
-    <label for="article_title">Wikipedia Article Title</label>
-    <input
-      type="text"
-      id="article_title"
-      name="article_title"
-      value="{{ article_title or '' }}"
-      required
-      maxlength="255"
-      placeholder="e.g., Albert Einstein, Python (programming language)"
-      autofocus
-    />
-    <small>
-      Enter the exact title of the article as it appears on Wikipedia.
-      Article titles are case-sensitive.
-    </small>
-  </div>
+                    <div class="mb-4">
+                        <label for="article_title" class="form-label fw-medium">
+                            <i class="bi bi-search me-1"></i>Wikipedia Article Title <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control form-control-lg" id="article_title" name="article_title" value="{{ article_title or '' }}" required maxlength="255" placeholder="e.g., Albert Einstein, Python (programming language)" autofocus>
+                        <div class="form-text">
+                            Enter the exact title of the article as it appears on Wikipedia. Article titles are case-sensitive.
+                        </div>
+                    </div>
 
-  <div class="form-actions">
-    <button type="submit" class="btn btn-primary">Import Article</button>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
-  </div>
-</form>
+                    <div class="d-flex flex-column flex-sm-row gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-cloud-download me-1"></i>Import Article
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle me-1"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
 
-<div class="help-section">
-  <h2>Tips for Finding Article Titles</h2>
-  <ul>
-    <li>Visit <a href="https://en.wikipedia.org" target="_blank" rel="noopener">en.wikipedia.org</a> to search for articles</li>
-    <li>Copy the article title exactly as it appears in the page heading</li>
-    <li>Spaces are allowed (e.g., "New York City")</li>
-    <li>Parenthetical disambiguations are supported (e.g., "Mercury (planet)")</li>
-  </ul>
+        <!-- Help Card -->
+        <div class="card shadow-sm border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightbulb me-2"></i>Tips for Finding Article Titles
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li class="mb-2">
+                        <i class="bi bi-globe me-2 text-primary"></i>
+                        Visit <a href="https://en.wikipedia.org" target="_blank" rel="noopener" class="link-primary">en.wikipedia.org</a> to search for articles
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-clipboard me-2 text-primary"></i>
+                        Copy the article title exactly as it appears in the page heading
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-type me-2 text-primary"></i>
+                        Spaces are allowed (e.g., "New York City")
+                    </li>
+                    <li class="mb-0">
+                        <i class="bi bi-braces me-2 text-primary"></i>
+                        Parenthetical disambiguations are supported (e.g., "Mercury (planet)")
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
