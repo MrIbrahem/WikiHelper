@@ -1,109 +1,275 @@
-# app.py
-# Flask application for Wiki Ref Workspace Manager
+"""
+app.py - Flask Application for Wiki Ref Workspace Manager
 
-from urllib.parse import quote
+This is the main entry point for the WikiHelper web application. It defines
+all routes and handles HTTP requests for workspace management.
+
+Application Architecture:
+    - Uses Flask's built-in development server (suitable for internal use)
+    - Cookie-based user identification for workspace isolation
+    - CSRF protection on all forms
+    - Path traversal protection on all file operations
+
+User Isolation:
+    Workspaces are isolated per-user based on a cookie-stored username.
+    Each user's workspaces are stored in a subdirectory under WIKI_WORK_ROOT.
+    Note: This is NOT authentication - cookies can be manipulated.
+
+Routes:
+    /                   Dashboard listing workspaces
+    /new                Create new workspace from WikiText
+    /import-wikipedia   Import article from Wikipedia API
+    /set_user           Set username cookie
+    /logout             Clear username cookie
+    /w/<slug>/edit      Edit workspace content
+    /w/<slug>/save      Save and restore references
+    /w/<slug>/browse    Browse workspace files
+    /w/<slug>/file/<name>   View specific file
+    /w/<slug>/download/<name>   Download file
+
+Usage:
+    cd src && python app.py
+    # Access at http://localhost:5000
+
+Security Considerations:
+    - No rate limiting (consider adding for public deployments)
+    - No authentication (cookie-based user isolation only)
+    - DEBUG mode should never be enabled in production
+"""
+
+from __future__ import annotations
+
 import sys
-from flask import Flask, render_template, request, redirect, url_for, flash, abort, Response, jsonify, make_response
-from flask_wtf.csrf import CSRFProtect
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
 
+from flask import (
+    Flask,
+    Response,
+    abort,
+    flash,
+    jsonify,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
+from flask_wtf.csrf import CSRFProtect
+from urllib.parse import quote
 from werkzeug.exceptions import RequestEntityTooLarge
+from werkzeug.wrappers import Response as WerkzeugResponse
+
+# Import wikiops modules for workspace operations.
 from wikiops.storage import (
+    get_workspace_file,
     list_workspaces,
     create_workspace,
-    update_workspace,
-    safe_workspace_path,
-    read_text,
     read_json,
-    get_workspace_file
+    read_text,
+    safe_workspace_path,
+    update_workspace,
 )
 from wikiops.wikipedia import fetch_wikipedia_article, validate_article_title
+
+# Import configuration.
 from config import Config
 
 
-# def create_app(config_class=Config):
-"""Application factory."""
+# Type alias for Flask route return values.
+# Routes can return strings (templates), Response objects, or redirects.
+RouteResponse = Union[str, Response, WerkzeugResponse]
+
+
+# ============================================================================
+# Application Setup
+# ============================================================================
+
+# Initialize Flask application with configuration from Config class.
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Initialize CSRF protection
+# Initialize CSRF protection for all forms.
+# This adds hidden csrf_token fields to forms and validates them on POST.
 csrf = CSRFProtect(app)
 
-# Ensure workspace root exists
-root = app.config["WIKI_WORK_ROOT"]
+# Ensure the workspace root directory exists.
+# This is the parent directory for all user workspace directories.
+root: Path = app.config["WIKI_WORK_ROOT"]
 root.mkdir(parents=True, exist_ok=True)
 
 
-def get_user_root():
-    """Get the root directory for the current user based on cookies."""
+# ============================================================================
+# Helper Functions
+# ============================================================================
+
+def get_user_root() -> Optional[Path]:
+    """
+    Get the root directory for the current user based on cookies.
+
+    This function implements simple user isolation by creating a
+    subdirectory for each username. Note that this is NOT authentication -
+    cookies can be manipulated by users.
+
+    Returns:
+        Path to the user's workspace directory if username cookie exists.
+        None if no username cookie is set.
+
+    Side Effects:
+        Creates the user directory if it doesn't exist.
+    """
     username = request.cookies.get("username")
     if not username:
         return None
+
+    # Create user-specific directory under root.
     user_root = root / username
     user_root.mkdir(parents=True, exist_ok=True)
     return user_root
 
 
+# ============================================================================
+# Request Hooks
+# ============================================================================
+
 @app.before_request
-def check_user():
-    """Redirect to set_user if username cookie is missing, except for set_user and static files."""
+def check_user() -> Optional[RouteResponse]:
+    """
+    Redirect to set_user if username cookie is missing.
+
+    This hook runs before every request except set_user and static files.
+    It ensures all users have a username set before accessing workspaces.
+
+    Returns:
+        None if username cookie exists (request proceeds normally).
+        Redirect response to set_user if no username cookie.
+
+    Exempt Routes:
+        - set_user: The route that sets the cookie
+        - static: Static file serving (CSS, JS, images)
+    """
+    # Skip check for user setup and static files.
     if request.endpoint in ["set_user", "static"]:
-        return
+        return None
 
     if not request.cookies.get("username"):
+        # Redirect to user setup, preserving the original destination.
         return redirect(url_for("set_user", next=request.url))
 
-
-@app.route("/set_user", methods=["GET", "POST"])
-def set_user():
-    """Set the username cookie."""
-    if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        if not username:
-            flash("Username is required.", "error")
-            return render_template("set_user.html")
-
-        # Basic validation for username to be used as folder name
-        from wikiops.utils import slugify_title
-        safe_username = slugify_title(username)
-        if not safe_username:
-            flash("Invalid username.", "error")
-            return render_template("set_user.html")
-
-        next_url = request.args.get("next") or url_for("index")
-        resp = make_response(redirect(next_url))
-        resp.set_cookie("username", safe_username, max_age=30*24*60*60) # 30 days
-        return resp
-
-    return render_template("set_user.html")
+    return None
 
 
-@app.route("/logout")
-def logout():
-    """Clear the username cookie."""
-    resp = make_response(redirect(url_for("set_user")))
-    resp.delete_cookie("username")
-    flash("Logged out successfully.", "info")
-    return resp
-
+# ============================================================================
+# Error Handlers
+# ============================================================================
 
 @app.errorhandler(RequestEntityTooLarge)
-def handle_large_request(e):
+def handle_large_request(e: RequestEntityTooLarge) -> Tuple[Response, int]:
+    """
+    Handle requests that exceed MAX_CONTENT_LENGTH.
+
+    This handler returns a JSON error response for oversized uploads,
+    which is useful for AJAX-based file uploads.
+
+    Args:
+        e: The RequestEntityTooLarge exception.
+
+    Returns:
+        JSON response with error details and 413 status code.
+    """
     return jsonify({
         "error": "Request too large",
         "message": "Uploaded data exceeds the allowed size limit"
     }), 413
 
 
+# ============================================================================
+# User Management Routes
+# ============================================================================
+
+@app.route("/set_user", methods=["GET", "POST"])
+def set_user() -> RouteResponse:
+    """
+    Set the username cookie for user identification.
+
+    GET: Display the username form.
+    POST: Process the form and set the cookie.
+
+    The username is slugified for use as a directory name, so special
+    characters and non-ASCII text are removed.
+
+    Returns:
+        GET: Rendered set_user.html template.
+        POST: Redirect to next URL or index with username cookie set.
+    """
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+
+        if not username:
+            flash("Username is required.", "error")
+            return render_template("set_user.html")
+
+        # Slugify username for safe use as directory name.
+        from wikiops.utils import slugify_title
+        safe_username = slugify_title(username)
+
+        if not safe_username:
+            flash("Invalid username.", "error")
+            return render_template("set_user.html")
+
+        # Determine redirect target (next URL or index).
+        next_url = request.args.get("next") or url_for("index")
+
+        # Create response with cookie set.
+        resp = make_response(redirect(next_url))
+        # Cookie expires in 30 days.
+        resp.set_cookie("username", safe_username, max_age=30 * 24 * 60 * 60)
+
+        return resp
+
+    return render_template("set_user.html")
+
+
+@app.route("/logout")
+def logout() -> RouteResponse:
+    """
+    Clear the username cookie and redirect to user setup.
+
+    Returns:
+        Redirect to set_user with cookie deleted.
+    """
+    resp = make_response(redirect(url_for("set_user")))
+    resp.delete_cookie("username")
+    flash("Logged out successfully.", "info")
+    return resp
+
+
+# ============================================================================
+# Dashboard Route
+# ============================================================================
+
 @app.route("/")
-def index():
-    """Dashboard - list all workspaces."""
+def index() -> str:
+    """
+    Dashboard - list all workspaces for the current user.
+
+    Workspaces are grouped by status:
+    - Active: status != "done" (currently being edited)
+    - Done: status == "done" (editing complete)
+
+    Returns:
+        Rendered index.html template with workspace lists.
+    """
     user_root = get_user_root()
     if not user_root:
-        return redirect(url_for("set_user"))
+        # Should not happen due to before_request hook, but handle gracefully.
+        return render_template("index.html", active_workspaces=[], done_workspaces=[])
 
+    # Get all workspaces and split by status.
     all_workspaces = list_workspaces(user_root)
     active_workspaces = [ws for ws in all_workspaces if ws.get("status") != "done"]
     done_workspaces = [ws for ws in all_workspaces if ws.get("status") == "done"]
+
     return render_template(
         "index.html",
         active_workspaces=active_workspaces,
@@ -111,9 +277,25 @@ def index():
     )
 
 
+# ============================================================================
+# Workspace Creation Routes
+# ============================================================================
+
 @app.route("/new", methods=["GET", "POST"])
-def new_workspace():
-    """Create a new workspace."""
+def new_workspace() -> RouteResponse:
+    """
+    Create a new workspace from pasted or uploaded WikiText.
+
+    GET: Display the new workspace form.
+    POST: Create the workspace from submitted content.
+
+    The form accepts either direct text input or file upload.
+    File upload takes precedence if both are provided.
+
+    Returns:
+        GET: Rendered new.html template.
+        POST: Redirect to edit page on success, or form with errors.
+    """
     user_root = get_user_root()
     if not user_root:
         return redirect(url_for("set_user"))
@@ -122,25 +304,26 @@ def new_workspace():
         title = request.form.get("title", "").strip()
         wikitext = request.form.get("wikitext", "")
 
-        # Check if a file was uploaded
-        file = request.files.get('wikitext_file')
+        # Check for file upload (takes precedence over text field).
+        file = request.files.get("wikitext_file")
         if file and file.filename:
             try:
-                wikitext = file.read().decode('utf-8')
+                wikitext = file.read().decode("utf-8")
             except UnicodeDecodeError:
                 flash("Uploaded file must be UTF-8 encoded text.", "error")
                 return render_template("new.html", title=title, wikitext=wikitext)
 
-        # Validate title
+        # Validate title.
         if not title:
             flash("Title is required.", "error")
             return render_template("new.html", title=title, wikitext=wikitext)
 
-        if len(title) > app.config.get("MAX_TITLE_LENGTH", 120):
-            flash(f"Title must be {app.config.get('MAX_TITLE_LENGTH', 120)} characters or less.", "error")
+        max_title = app.config.get("MAX_TITLE_LENGTH", 120)
+        if len(title) > max_title:
+            flash(f"Title must be {max_title} characters or less.", "error")
             return render_template("new.html", title=title, wikitext=wikitext)
 
-        # Validate wikitext
+        # Validate wikitext content.
         if not wikitext:
             if file and file.filename:
                 flash("Uploaded file is empty or does not contain valid text.", "error")
@@ -166,8 +349,20 @@ def new_workspace():
 
 
 @app.route("/import-wikipedia", methods=["GET", "POST"])
-def import_wikipedia():
-    """Import an article from English Wikipedia to create a new workspace."""
+def import_wikipedia() -> RouteResponse:
+    """
+    Import an article from English Wikipedia to create a new workspace.
+
+    GET: Display the Wikipedia import form.
+    POST: Fetch article and create workspace.
+
+    The article title is validated client-side and server-side before
+    making the API request to Wikipedia.
+
+    Returns:
+        GET: Rendered import_wikipedia.html template.
+        POST: Redirect to edit page on success, or form with errors.
+    """
     user_root = get_user_root()
     if not user_root:
         return redirect(url_for("set_user"))
@@ -175,13 +370,13 @@ def import_wikipedia():
     if request.method == "POST":
         article_title = request.form.get("article_title", "").strip()
 
-        # Validate article title
+        # Validate article title format.
         is_valid, error_msg = validate_article_title(article_title)
         if not is_valid:
             flash(error_msg, "error")
             return render_template("import_wikipedia.html", article_title=article_title)
 
-        # Fetch article content from Wikipedia
+        # Fetch article content from Wikipedia API.
         wikitext, error = fetch_wikipedia_article(article_title)
 
         if error:
@@ -192,9 +387,11 @@ def import_wikipedia():
             flash("Retrieved empty content from Wikipedia.", "error")
             return render_template("import_wikipedia.html", article_title=article_title)
 
-        # Create workspace with the fetched content
+        # Create workspace with fetched content.
         try:
-            slug, workspace_path, is_new = create_workspace(user_root, article_title, wikitext)
+            slug, workspace_path, is_new = create_workspace(
+                user_root, article_title, wikitext
+            )
 
             if is_new:
                 flash(f"Successfully imported '{article_title}' from Wikipedia.", "success")
@@ -210,29 +407,49 @@ def import_wikipedia():
     return render_template("import_wikipedia.html")
 
 
-@app.route("/w/<slug>/edit", methods=["GET", "POST"])
-def edit_workspace(slug: str):
-    """Edit workspace's editable.wiki."""
+# ============================================================================
+# Workspace Editing Routes
+# ============================================================================
+
+@app.route("/w/<slug>/edit", methods=["GET"])
+def edit_workspace(slug: str) -> str:
+    """
+    Edit workspace's editable.wiki content.
+
+    This route displays the editing interface with the current editable
+    content and a preview of the restored content.
+
+    Args:
+        slug: The workspace identifier (safe directory name).
+
+    Returns:
+        Rendered edit.html template with workspace content.
+
+    Raises:
+        404: If workspace doesn't exist or slug is invalid.
+    """
     user_root = get_user_root()
     if not user_root:
-        return redirect(url_for("set_user"))
+        # This shouldn't happen due to before_request, but handle it.
+        abort(404)
 
+    # Validate and resolve workspace path.
     workspace_path = safe_workspace_path(user_root, slug)
     if workspace_path is None or not workspace_path.exists():
         abort(404)
 
     editable_path = workspace_path / "editable.wiki"
-
     if not editable_path.exists():
         abort(404)
 
+    # Load content for editing.
     editable_content = read_text(editable_path)
 
-    # Load meta for display
+    # Load metadata for display.
     meta_path = workspace_path / "meta.json"
     meta = read_json(meta_path) if meta_path.exists() else {}
 
-    # Read restored content for preview
+    # Load restored content for preview.
     restored_path = workspace_path / "restored.wiki"
     restored_content = read_text(restored_path) if restored_path.exists() else ""
 
@@ -246,16 +463,32 @@ def edit_workspace(slug: str):
 
 
 @app.route("/w/<slug>/save", methods=["POST"])
-def save_workspace(slug: str):
-    """Save workspace's editable.wiki and restore references."""
+def save_workspace(slug: str) -> RouteResponse:
+    """
+    Save workspace's editable.wiki and regenerate restored.wiki.
+
+    This route handles form submission from the edit page. It saves
+    the user's edits and triggers reference restoration.
+
+    Args:
+        slug: The workspace identifier.
+
+    Returns:
+        Redirect to view the restored file on success.
+        Redirect back to edit page on error.
+
+    Raises:
+        404: If workspace doesn't exist.
+    """
     user_root = get_user_root()
     if not user_root:
-        return redirect(url_for("set_user"))
+        abort(404)
 
     workspace_path = safe_workspace_path(user_root, slug)
     if workspace_path is None or not workspace_path.exists():
         abort(404)
 
+    # Get form data.
     editable_content = request.form.get("editable_content", "")
     status = request.form.get("status")
 
@@ -268,29 +501,48 @@ def save_workspace(slug: str):
         return redirect(url_for("edit_workspace", slug=slug))
 
 
+# ============================================================================
+# Workspace Browsing Routes
+# ============================================================================
+
 @app.route("/w/<slug>/browse")
-def browse_workspace(slug: str):
-    """Browse workspace files."""
+def browse_workspace(slug: str) -> str:
+    """
+    Browse workspace files.
+
+    Displays a list of all files in the workspace with their sizes
+    and modification times.
+
+    Args:
+        slug: The workspace identifier.
+
+    Returns:
+        Rendered browse.html template with file list.
+
+    Raises:
+        404: If workspace doesn't exist.
+    """
     user_root = get_user_root()
     if not user_root:
-        return redirect(url_for("set_user"))
+        abort(404)
 
     workspace_path = safe_workspace_path(user_root, slug)
     if workspace_path is None or not workspace_path.exists():
         abort(404)
 
-    # List available files
-    files = []
+    # Build file list with metadata.
+    files: List[Dict[str, Any]] = []
     for filename in ["original.wiki", "refs.json", "editable.wiki", "restored.wiki", "meta.json"]:
         file_path = workspace_path / filename
         if file_path.exists():
+            stat = file_path.stat()
             files.append({
                 "name": filename,
-                "size": file_path.stat().st_size,
-                "modified": file_path.stat().st_mtime
+                "size": stat.st_size,
+                "modified": stat.st_mtime
             })
 
-    # Load meta for display
+    # Load metadata for display.
     meta_content = get_workspace_file(workspace_path, "meta.json")
 
     return render_template(
@@ -302,16 +554,32 @@ def browse_workspace(slug: str):
 
 
 @app.route("/w/<slug>/file/<name>")
-def view_file(slug: str, name: str):
-    """View a specific file in the workspace."""
+def view_file(slug: str, name: str) -> str:
+    """
+    View a specific file in the workspace.
+
+    Displays the file content in a readable format. JSON files are
+    pretty-printed for readability.
+
+    Args:
+        slug: The workspace identifier.
+        name: The filename to view.
+
+    Returns:
+        Rendered view_file.html template with file content.
+
+    Raises:
+        404: If workspace or file doesn't exist.
+    """
     user_root = get_user_root()
     if not user_root:
-        return redirect(url_for("set_user"))
+        abort(404)
 
     workspace_path = safe_workspace_path(user_root, slug)
     if workspace_path is None or not workspace_path.exists():
         abort(404)
 
+    # Get file content (whitelist enforced in get_workspace_file).
     content = get_workspace_file(workspace_path, name)
     if content is None:
         abort(404)
@@ -325,11 +593,25 @@ def view_file(slug: str, name: str):
 
 
 @app.route("/w/<slug>/download/<name>")
-def download_file(slug: str, name: str):
-    """Download a specific file from the workspace."""
+def download_file(slug: str, name: str) -> Response:
+    """
+    Download a specific file from the workspace.
+
+    Returns the file as an attachment with appropriate content type.
+
+    Args:
+        slug: The workspace identifier.
+        name: The filename to download.
+
+    Returns:
+        Response with file content as attachment.
+
+    Raises:
+        404: If workspace or file doesn't exist.
+    """
     user_root = get_user_root()
     if not user_root:
-        return redirect(url_for("set_user"))
+        abort(404)
 
     workspace_path = safe_workspace_path(user_root, slug)
     if workspace_path is None or not workspace_path.exists():
@@ -339,14 +621,16 @@ def download_file(slug: str, name: str):
     if content is None:
         abort(404)
 
-    # Determine content type
+    # Determine content type based on file extension.
     if name.endswith(".json"):
         content_type = "application/json"
     else:
         content_type = "text/plain"
 
-    # Safely encode the filename for Content-Disposition header
+    # Safely encode filename for Content-Disposition header.
+    # Uses RFC 5987 encoding for non-ASCII filenames.
     safe_filename = quote(name, safe="")
+
     return Response(
         content,
         mimetype=content_type,
@@ -354,6 +638,15 @@ def download_file(slug: str, name: str):
     )
 
 
+# ============================================================================
+# Application Entry Point
+# ============================================================================
+
 if __name__ == "__main__":
+    # Enable debug mode if FLASK_DEBUG=1 or "debug" in command line args.
     debug = app.config["DEBUG"] or "debug" in sys.argv
+
+    # Run the development server.
+    # host="0.0.0.0" makes it accessible from other machines on the network.
+    # This is suitable for internal tools but NOT for production.
     app.run(debug=debug, host="0.0.0.0", port=5000)
