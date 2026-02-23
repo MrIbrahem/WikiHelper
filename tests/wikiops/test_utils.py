@@ -1,6 +1,5 @@
-import pytest
 
-from wikiops.utils import slugify_title, fix_space_before_section, fix_sections_space
+from src.wikiops.utils import slugify_title, fix_space_before_section, fix_sections_space
 
 
 class TestSlugifyTitle:

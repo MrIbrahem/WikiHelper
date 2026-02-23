@@ -1,13 +1,73 @@
-# tests/conftest.py
-# Shared pytest fixtures for WikiHelper tests
+"""
+conftest.py - Shared pytest fixtures for WikiHelper tests
+
+This module defines fixtures for testing the Flask application using
+the application factory pattern.
+"""
+
+from __future__ import annotations
 
 import sys
-import pytest
+import tempfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent/"src"))
+import pytest
+
+# Add src to path for imports
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
+from src.main_app import create_app
+from src.config import TestingConfig
 
 
+@pytest.fixture
+def app():
+    """
+    Create application for testing.
+
+    Uses TestingConfig with:
+    - TESTING = True
+    - WTF_CSRF_ENABLED = False (for easier form testing)
+    - Temporary directory for WIKI_WORK_ROOT
+    """
+    # Create a temporary directory for workspace storage
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        test_config = type(
+            "TestConfig",
+            (TestingConfig,),
+            {"WIKI_WORK_ROOT": Path(tmp_dir)}
+        )
+        app = create_app(test_config)
+
+        with app.app_context():
+            yield app
+
+
+@pytest.fixture
+def client(app):
+    """Create a test client for the app."""
+    return app.test_client()
+
+
+@pytest.fixture
+def runner(app):
+    """Create a test CLI runner for the app."""
+    return app.test_cli_runner()
+
+
+@pytest.fixture
+def auth_client(client):
+    """
+    Create an authenticated test client with username in session.
+
+    This simulates a logged-in user.
+    """
+    with client.session_transaction() as sess:
+        sess["username"] = "testuser"
+    return client
+
+
+# Data fixtures for wikiops testing
 @pytest.fixture
 def simple_wikitext():
     return (
@@ -32,7 +92,7 @@ def multiline_ref_wikitext():
 @pytest.fixture
 def self_closing_ref_wikitext():
     return (
-        "Text <ref name=\"nyt-1910-03-31\" /> end."
+        'Text <ref name="nyt-1910-03-31" /> end.'
     )
 
 

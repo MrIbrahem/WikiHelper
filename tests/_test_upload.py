@@ -4,7 +4,7 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
-from app import app
+from src.app import app
 
 
 class TestFileUpload(unittest.TestCase):
