@@ -8,10 +8,10 @@
         <i class="bi bi-folder2-open me-2 text-primary"></i>Workspaces
     </h1>
     <div class="d-flex gap-2 flex-wrap">
-        <a href="{{ url_for('new_workspace') }}" class="btn btn-primary">
+        <a href="{{ url_for('workspaces.new_workspace') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle me-1"></i>New Workspace
         </a>
-        <a href="{{ url_for('import_wikipedia') }}" class="btn btn-outline-primary">
+        <a href="{{ url_for('workspaces.import_wikipedia') }}" class="btn btn-outline-primary">
             <i class="bi bi-cloud-download me-1"></i>Import from Wikipedia
         </a>
     </div>
@@ -52,10 +52,10 @@
                         </td>
                         <td class="text-center">
                             <div class="btn-group btn-group-sm" role="group" aria-label="Workspace actions">
-                                <a href="{{ url_for('edit_workspace', slug=ws.slug) }}" class="btn btn-primary" title="Edit">
+                                <a href="{{ url_for('workspaces.edit_workspace', slug=ws.slug) }}" class="btn btn-primary" title="Edit">
                                     <i class="bi bi-pencil"></i><span class="d-none d-md-inline ms-1">Edit</span>
                                 </a>
-                                <a href="{{ url_for('browse_workspace', slug=ws.slug) }}" class="btn btn-outline-secondary" title="Browse">
+                                <a href="{{ url_for('workspaces.browse_workspace', slug=ws.slug) }}" class="btn btn-outline-secondary" title="Browse">
                                     <i class="bi bi-folder"></i><span class="d-none d-md-inline ms-1">Browse</span>
                                 </a>
                             </div>
@@ -69,7 +69,7 @@
         <div class="text-center py-5 text-body-secondary">
             <i class="bi bi-inbox fs-1 mb-3 d-block"></i>
             <p class="mb-2">No active workspaces found.</p>
-            <a href="{{ url_for('new_workspace') }}" class="btn btn-outline-primary btn-sm">
+            <a href="{{ url_for('workspaces.new_workspace') }}" class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-plus-circle me-1"></i>Create your first workspace
             </a>
         </div>
@@ -112,10 +112,10 @@
                         </td>
                         <td class="text-center">
                             <div class="btn-group btn-group-sm" role="group" aria-label="Workspace actions">
-                                <a href="{{ url_for('edit_workspace', slug=ws.slug) }}" class="btn btn-primary" title="Edit">
+                                <a href="{{ url_for('workspaces.edit_workspace', slug=ws.slug) }}" class="btn btn-primary" title="Edit">
                                     <i class="bi bi-pencil"></i><span class="d-none d-md-inline ms-1">Edit</span>
                                 </a>
-                                <a href="{{ url_for('browse_workspace', slug=ws.slug) }}" class="btn btn-outline-secondary" title="Browse">
+                                <a href="{{ url_for('workspaces.browse_workspace', slug=ws.slug) }}" class="btn btn-outline-secondary" title="Browse">
                                     <i class="bi bi-folder"></i><span class="d-none d-md-inline ms-1">Browse</span>
                                 </a>
                             </div>

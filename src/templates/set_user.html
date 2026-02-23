@@ -16,7 +16,7 @@
                     Please enter a username to continue. This will be used to organize your workspaces.
                 </p>
 
-                <form method="POST" action="{{ url_for('set_user') }}">
+                <form method="POST" action="{{ url_for('main.set_user') }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     
                     <div class="mb-4">
