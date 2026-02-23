@@ -103,6 +103,59 @@ root.mkdir(parents=True, exist_ok=True)
 # Helper Functions
 # ============================================================================
 
+def is_safe_redirect_url(url: str) -> bool:
+    """
+    Validate that a URL is safe for redirects (relative or same-host).
+
+    This prevents open-redirect vulnerabilities by ensuring the redirect
+    target is either a relative path or belongs to the same host.
+
+    Args:
+        url: The URL to validate.
+
+    Returns:
+        True if the URL is safe to redirect to, False otherwise.
+    """
+    from urllib.parse import urlparse
+
+    parsed = urlparse(url)
+    # Safe if both scheme and netloc are empty (relative URL)
+    if not parsed.scheme and not parsed.netloc:
+        return True
+    # Could add same-host check here if needed for absolute URLs
+    return False
+
+
+def validate_username(username: str) -> bool:
+    """
+    Validate a username from cookies for use as a directory name.
+
+    This prevents path traversal attacks by rejecting usernames that
+    contain path separators, parent directory references, or other
+    unsafe characters.
+
+    Args:
+        username: The username to validate.
+
+    Returns:
+        True if the username is safe, False otherwise.
+    """
+    if not username:
+        return False
+    # Reject path traversal attempts
+    if ".." in username or "/" in username or "\\" in username:
+        return False
+    # Reject Windows reserved names
+    reserved = {
+        "con", "prn", "aux", "nul",
+        "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9",
+        "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9"
+    }
+    if username.lower() in reserved:
+        return False
+    return True
+
+
 def get_user_root() -> Optional[Path]:
     """
     Get the root directory for the current user based on cookies.
@@ -112,20 +165,35 @@ def get_user_root() -> Optional[Path]:
     cookies can be manipulated by users.
 
     Returns:
-        Path to the user's workspace directory if username cookie exists.
-        None if no username cookie is set.
+        Path to the user's workspace directory if username cookie exists
+        and is valid.
+        None if no username cookie is set or validation fails.
 
     Side Effects:
-        Creates the user directory if it doesn't exist.
+        Creates the user directory if it doesn't exist and validation passes.
     """
     username = request.cookies.get("username")
     if not username:
         return None
 
+    # Validate username to prevent path traversal attacks.
+    if not validate_username(username):
+        return None
+
     # Create user-specific directory under root.
     user_root = root / username
-    user_root.mkdir(parents=True, exist_ok=True)
-    return user_root
+
+    # Resolve and verify the path is within root.
+    try:
+        resolved_user_root = user_root.resolve()
+        resolved_root = root.resolve()
+        if not resolved_user_root.is_relative_to(resolved_root):
+            return None
+    except (OSError, ValueError):
+        return None
+
+    resolved_user_root.mkdir(parents=True, exist_ok=True)
+    return resolved_user_root
 
 
 # ============================================================================
@@ -218,7 +286,10 @@ def set_user() -> RouteResponse:
             return render_template("set_user.html")
 
         # Determine redirect target (next URL or index).
-        next_url = request.args.get("next") or url_for("index")
+        # Validate next_url to prevent open-redirect attacks.
+        next_url = request.args.get("next")
+        if not next_url or not is_safe_redirect_url(next_url):
+            next_url = url_for("index")
 
         # Create response with cookie set.
         resp = make_response(redirect(next_url))

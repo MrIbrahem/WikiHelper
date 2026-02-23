@@ -394,7 +394,8 @@ def create_workspace(
 
         # Write original.wiki (immutable source).
         # This file should never be modified after creation.
-        atomic_write(original_path, wikitext)
+        # Use apply_fixes=False to preserve exact input.
+        atomic_write(original_path, wikitext, apply_fixes=False)
 
         # Write refs.json (immutable reference data).
         refs_path = workspace_path / "refs.json"
@@ -406,8 +407,9 @@ def create_workspace(
 
         # Write restored.wiki (initially same as original).
         # This will be regenerated when the user saves edits.
+        # Use apply_fixes=False to preserve exact input.
         restored_path = workspace_path / "restored.wiki"
-        atomic_write(restored_path, wikitext)
+        atomic_write(restored_path, wikitext, apply_fixes=False)
 
         # Create metadata with ISO 8601 timestamps.
         # Using UTC (Z suffix) ensures consistent timezone handling.
@@ -465,16 +467,19 @@ def update_workspace(
     refs_path = workspace_path / "refs.json"
     refs_map: Dict[str, str] = read_json(refs_path)  # type: ignore[assignment]
 
-    # Update the user-editable content.
+    # Apply fixes first so editable.wiki and restored.wiki are consistent.
+    fixed_editable_content = fix_some_issues(editable_content)
+
+    # Update the user-editable content with fixes already applied.
     editable_path = workspace_path / "editable.wiki"
-    atomic_write(editable_path, editable_content)
+    atomic_write(editable_path, fixed_editable_content, apply_fixes=False)
 
-    # Restore references to generate the final output.
-    restored_content = restore_refs_in_text(editable_content, refs_map)
+    # Restore references to generate the final output using fixed content.
+    restored_content = restore_refs_in_text(fixed_editable_content, refs_map)
 
-    # Write the restored content.
+    # Write the restored content (already fixed via fixed_editable_content).
     restored_path = workspace_path / "restored.wiki"
-    atomic_write(restored_path, restored_content)
+    atomic_write(restored_path, restored_content, apply_fixes=False)
 
     # Update metadata with new timestamp and optional status change.
     meta_path = workspace_path / "meta.json"

@@ -94,7 +94,15 @@ class Config:
     # Default is 500MB to accommodate large Wikipedia articles.
     # This prevents memory exhaustion from oversized uploads.
     _max_content = os.environ.get("MAX_CONTENT_LENGTH", "524288000")
-    MAX_CONTENT_LENGTH: Final[int] = int(_max_content)
+    try:
+        MAX_CONTENT_LENGTH: Final[int] = int(_max_content)
+    except (ValueError, TypeError):
+        warnings.warn(
+            f"Invalid MAX_CONTENT_LENGTH value '{_max_content}', using default 524288000",
+            UserWarning,
+            stacklevel=2
+        )
+        MAX_CONTENT_LENGTH: Final[int] = 524288000
 
     # Maximum length for workspace titles.
     # This prevents database/storage issues with extremely long titles.
@@ -113,9 +121,9 @@ class Config:
 
 # Log configuration at startup for debugging purposes.
 # This helps diagnose configuration issues without exposing sensitive values.
-if DEBUG := (os.environ.get("FLASK_DEBUG", "0") == "1"):
+if Config.DEBUG:
     warnings.warn(
-        f"Flask DEBUG mode enabled. WIKI_WORK_ROOT={WIKI_WORK_ROOT}",
+        f"Flask DEBUG mode enabled. WIKI_WORK_ROOT={Config.WIKI_WORK_ROOT}",
         UserWarning,
         stacklevel=2
     )
