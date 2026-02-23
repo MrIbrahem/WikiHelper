@@ -38,25 +38,13 @@ from extensions import csrf, limiter
 
 def create_app(config_class: Optional[type] = None) -> Flask:
     """
-    Application factory function.
-
-    Creates and configures a Flask application instance with all extensions,
-    blueprints, and request handlers registered.
-
-    Args:
-        config_class: Configuration class to use. Defaults to Config for
-            production-like settings, or DevelopmentConfig if FLASK_DEBUG=1.
-
+    Create and configure a Flask application with extensions, blueprints, error handlers, and request hooks registered.
+    
+    Parameters:
+        config_class (type, optional): Configuration class to apply to the app. If omitted, uses DevelopmentConfig when the environment variable FLASK_DEBUG is "1", otherwise uses Config.
+    
     Returns:
-        Configured Flask application instance.
-
-    Example:
-        >>> app = create_app()
-        >>> app.config['DEBUG']
-        False
-        >>> app = create_app(TestingConfig)
-        >>> app.config['TESTING']
-        True
+        Flask: The configured Flask application instance.
     """
     # Determine config class if not provided
     if config_class is None:
@@ -106,7 +94,15 @@ def create_app(config_class: Optional[type] = None) -> Flask:
 
 
 def _handle_large_request(e: RequestEntityTooLarge) -> tuple[Response, int]:
-    """Handle requests that exceed MAX_CONTENT_LENGTH."""
+    """
+    Return a 413 JSON response for requests that exceed the configured maximum content length.
+    
+    Parameters:
+        e (RequestEntityTooLarge): The exception raised for an oversized request.
+    
+    Returns:
+        tuple[Response, int]: A JSON response containing `error` and `message` fields, and the HTTP status code 413.
+    """
     from flask import jsonify
     return jsonify({
         "error": "Request too large",
@@ -116,9 +112,12 @@ def _handle_large_request(e: RequestEntityTooLarge) -> tuple[Response, int]:
 
 def _check_user() -> Optional[Response]:
     """
-    Redirect to set_user if username session is missing.
-
-    This hook runs before every request except set_user and static files.
+    Ensure a username is present in the session before processing a request.
+    
+    If the session does not contain "username", redirects to the "main.set_user" endpoint and preserves the original path and query string as the `next` parameter. This hook is not applied to the "main.set_user" and "static" endpoints.
+    
+    Returns:
+        Response or None: A redirect `Response` to the user-setup page when no username is present, `None` to continue normal request handling.
     """
     from flask import request, session, redirect, url_for
 
@@ -136,7 +135,23 @@ def _check_user() -> Optional[Response]:
 
 
 def _add_security_headers(response: Response) -> Response:
-    """Add security headers to all responses."""
+    """
+    Attach common security-related HTTP headers to the given response.
+    
+    Adds the following headers to mitigate common web vulnerabilities:
+    - X-Content-Type-Options: nosniff
+    - X-Frame-Options: SAMEORIGIN
+    - X-XSS-Protection: 1; mode=block
+    
+    If the application's SESSION_COOKIE_SECURE config is enabled, also adds
+    Strict-Transport-Security set to "max-age=31536000; includeSubDomains".
+    
+    Parameters:
+    	response (Response): The Flask response object to modify.
+    
+    Returns:
+    	response (Response): The same response object with security headers applied.
+    """
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["X-XSS-Protection"] = "1; mode=block"
@@ -150,7 +165,14 @@ def _add_security_headers(response: Response) -> Response:
 
 
 def _configure_logging(app: Flask) -> None:
-    """Configure rotating file logging for production."""
+    """
+    Set up rotating file logging for production.
+    
+    Creates a "logs" directory if it does not exist, attaches a RotatingFileHandler writing to "logs/wikihelper.log" (max 10240 bytes per file, 10 backup files), sets the handler and application logger level to INFO, and logs a startup message.
+    
+    Parameters:
+        app (Flask): The Flask application instance to configure.
+    """
     if not os.path.exists("logs"):
         os.mkdir("logs")
 

@@ -40,7 +40,15 @@ RouteResponse = str | Response | WerkzeugResponse
 
 
 def _validate_username(username: str) -> bool:
-    """Validate a username for use as a directory name."""
+    """
+    Check whether a username is safe to use as a filesystem directory name.
+    
+    Parameters:
+        username (str): Candidate username. Must be non-empty, must not contain "..", "/" or "\", and must not match reserved names (case-insensitive) such as "con", "prn", "aux", "nul", "com1"… "com9", or "lpt1"… "lpt9".
+    
+    Returns:
+        bool: True if the username satisfies the rules above, False otherwise.
+    """
     if not username:
         return False
     if ".." in username or "/" in username or "\\" in username:
@@ -56,7 +64,15 @@ def _validate_username(username: str) -> bool:
 
 
 def _get_user_root() -> Optional[Path]:
-    """Get the root directory for the current user."""
+    """
+    Resolve and return the per-user workspace root directory for the current session user.
+    
+    This validates the session-stored username, ensures it is a safe directory name, verifies the resolved user path is contained within the configured WIKI_WORK_ROOT, and creates the directory if it does not exist.
+    
+    Returns:
+        Path: The resolved user root directory.
+        None: If there is no username in session, the username is invalid, path resolution fails, or the resolved user path is not contained within the configured root.
+    """
     username = session.get("username")
     if not username:
         return None
@@ -182,7 +198,17 @@ def import_wikipedia() -> RouteResponse:
 
 @bp.route("/<slug>/edit", methods=["GET"])
 def edit_workspace(slug: str) -> str:
-    """Edit workspace's editable.wiki content."""
+    """
+    Render the edit page for a workspace by loading its editable content, restored content, and metadata.
+    
+    Loads editable.wiki, meta.json (if present), and restored.wiki (if present) for the workspace identified by `slug`, then renders the "edit.html" template with those values.
+    
+    Parameters:
+        slug (str): Workspace identifier (slug).
+    
+    Returns:
+        str: Rendered HTML for the workspace edit page.
+    """
     user_root = _get_user_root()
     if not user_root:
         abort(404)
@@ -214,7 +240,17 @@ def edit_workspace(slug: str) -> str:
 
 @bp.route("/<slug>/save", methods=["POST"])
 def save_workspace(slug: str) -> RouteResponse:
-    """Save workspace's editable.wiki and regenerate restored.wiki."""
+    """
+    Save the editable content for a workspace and regenerate its restored file.
+    
+    Saves the provided editable.wiki content for the workspace identified by `slug`, updates restoration data, flashes a success message and redirects to the restored.wiki view on success; on failure flashes an error message and redirects back to the edit view.
+    
+    Parameters:
+        slug (str): Workspace slug used to locate the workspace directory.
+    
+    Returns:
+        A redirect response to the workspace's restored.wiki view on success, or a redirect response to the workspace edit view on failure.
+    """
     user_root = _get_user_root()
     if not user_root:
         abort(404)
@@ -237,7 +273,20 @@ def save_workspace(slug: str) -> RouteResponse:
 
 @bp.route("/<slug>/browse")
 def browse_workspace(slug: str) -> str:
-    """Browse workspace files."""
+    """
+    Render the workspace file browser for the given workspace slug.
+    
+    Lists present workspace files (original.wiki, refs.json, editable.wiki, restored.wiki, meta.json) with their sizes and last-modified times and includes the workspace's meta content in the rendered page.
+    
+    Parameters:
+        slug (str): Workspace slug identifier.
+    
+    Returns:
+        str: Rendered HTML for the browse view.
+    
+    Raises:
+        404: If the user root cannot be resolved or the workspace does not exist.
+    """
     user_root = _get_user_root()
     if not user_root:
         abort(404)
@@ -269,7 +318,14 @@ def browse_workspace(slug: str) -> str:
 
 @bp.route("/<slug>/file/<name>")
 def view_file(slug: str, name: str) -> str:
-    """View a specific file in the workspace."""
+    """
+    Render an HTML page showing the contents of a named file from the workspace.
+    
+    Aborts with a 404 response when the user root is unavailable, the workspace does not exist, or the named file is not found.
+    
+    Returns:
+        Rendered HTML for the file view page.
+    """
     user_root = _get_user_root()
     if not user_root:
         abort(404)
@@ -292,7 +348,22 @@ def view_file(slug: str, name: str) -> str:
 
 @bp.route("/<slug>/download/<name>")
 def download_file(slug: str, name: str) -> Response:
-    """Download a specific file from the workspace."""
+    """
+    Send a workspace file to the client as a downloadable attachment.
+    
+    Parameters:
+        slug (str): Workspace slug identifying the workspace directory.
+        name (str): Name of the file inside the workspace to download.
+    
+    Returns:
+        Response: A Flask Response containing the file content with a Content-Disposition
+        attachment header. The response uses "application/json" for filenames ending in
+        ".json" and "text/plain" for other files.
+    
+    Notes:
+        Returns a 404 response if the user is not resolved, the workspace does not exist,
+        or the named file is not found.
+    """
     from urllib.parse import quote
 
     user_root = _get_user_root()

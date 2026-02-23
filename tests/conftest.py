@@ -45,22 +45,36 @@ def app():
 
 @pytest.fixture
 def client(app):
-    """Create a test client for the app."""
+    """
+    Create a Werkzeug test client for sending HTTP requests to the Flask application.
+    
+    Parameters:
+        app (Flask): The Flask application fixture.
+    
+    Returns:
+        FlaskClient: A test client instance bound to the provided app.
+    """
     return app.test_client()
 
 
 @pytest.fixture
 def runner(app):
-    """Create a test CLI runner for the app."""
+    """
+    Create a test CLI runner for the Flask application.
+    
+    Returns:
+        CliRunner: A test CLI runner for invoking the application's CLI commands.
+    """
     return app.test_cli_runner()
 
 
 @pytest.fixture
 def auth_client(client):
     """
-    Create an authenticated test client with username in session.
-
-    This simulates a logged-in user.
+    Configure the given test client to simulate a logged-in user by setting session["username"] to "testuser".
+    
+    Returns:
+        client: The same test client instance with session["username"] set to "testuser".
     """
     with client.session_transaction() as sess:
         sess["username"] = "testuser"
@@ -70,6 +84,12 @@ def auth_client(client):
 # Data fixtures for wikiops testing
 @pytest.fixture
 def simple_wikitext():
+    """
+    Provide a short WikiText sample containing an inline <ref> citation.
+    
+    Returns:
+        wikitext (str): A string with "Text before.", an inline <ref>Reference one</ref> tag, and "Text after.".
+    """
     return (
         "Text before."
         "<ref>Reference one</ref>"
@@ -91,6 +111,12 @@ def multiline_ref_wikitext():
 
 @pytest.fixture
 def self_closing_ref_wikitext():
+    """
+    Sample wikitext containing a self-closing <ref/> tag.
+    
+    Returns:
+        wikitext (str): A short string 'Text <ref name="nyt-1910-03-31" /> end.' containing a self-closing <ref> annotation.
+    """
     return (
         'Text <ref name="nyt-1910-03-31" /> end.'
     )
