@@ -238,7 +238,7 @@ def check_user() -> Optional[RouteResponse]:
 # ============================================================================
 
 @app.errorhandler(RequestEntityTooLarge)
-def handle_large_request(e: RequestEntityTooLarge) -> Tuple[Response, int]:
+def handle_large_request(_e: RequestEntityTooLarge) -> Tuple[Response, int]:
     """
     Handle requests that exceed MAX_CONTENT_LENGTH.
 
@@ -409,7 +409,7 @@ def new_workspace() -> RouteResponse:
             return render_template("new.html", title=title, wikitext=wikitext)
 
         try:
-            slug, workspace_path, is_new = create_workspace(user_root, title, wikitext)
+            slug, _, is_new = create_workspace(user_root, title, wikitext)
 
             if is_new:
                 flash(f"Workspace '{slug}' created successfully.", "success")
@@ -466,7 +466,7 @@ def import_wikipedia() -> RouteResponse:
 
         # Create workspace with fetched content.
         try:
-            slug, workspace_path, is_new = create_workspace(
+            slug, _, is_new = create_workspace(
                 user_root, article_title, wikitext
             )
 
