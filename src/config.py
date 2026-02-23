@@ -95,14 +95,15 @@ class Config:
     # This prevents memory exhaustion from oversized uploads.
     _max_content = os.environ.get("MAX_CONTENT_LENGTH", "524288000")
     try:
-        MAX_CONTENT_LENGTH: Final[int] = int(_max_content)
+        _max_content_int: int = int(_max_content)
     except (ValueError, TypeError):
         warnings.warn(
             f"Invalid MAX_CONTENT_LENGTH value '{_max_content}', using default 524288000",
             UserWarning,
-            stacklevel=2
+            stacklevel=2,
         )
-        MAX_CONTENT_LENGTH: Final[int] = 524288000
+        _max_content_int = 524_288_000
+    MAX_CONTENT_LENGTH: Final[int] = _max_content_int
 
     # Maximum length for workspace titles.
     # This prevents database/storage issues with extremely long titles.
@@ -117,6 +118,43 @@ class Config:
     # CSRF protection for Flask-WTF forms.
     # This should always be enabled unless you have a specific reason to disable it.
     WTF_CSRF_ENABLED: Final[bool] = True
+
+    # Session security settings.
+    # SESSION_COOKIE_HTTPONLY: Prevents JavaScript access to session cookie.
+    # SESSION_COOKIE_SECURE: Requires HTTPS (set to False for local development).
+    # SESSION_COOKIE_SAMESITE: CSRF protection for cross-site requests.
+    # PERMANENT_SESSION_LIFETIME: How long session cookies last.
+    SESSION_COOKIE_HTTPONLY: Final[bool] = True
+    SESSION_COOKIE_SECURE: Final[bool] = False  # Set to True in production with HTTPS
+    SESSION_COOKIE_SAMESITE: Final[str] = "Lax"
+    PERMANENT_SESSION_LIFETIME: Final[int] = 30 * 24 * 60 * 60  # 30 days in seconds
+
+
+class DevelopmentConfig(Config):
+    """Development configuration with debug enabled."""
+    DEBUG: Final[bool] = True
+    SESSION_COOKIE_SECURE: Final[bool] = False  # Allow HTTP for local dev
+
+
+class TestingConfig(Config):
+    """Testing configuration with CSRF disabled for form testing."""
+    TESTING: Final[bool] = True
+    DEBUG: Final[bool] = True
+    WTF_CSRF_ENABLED: Final[bool] = False
+    SESSION_COOKIE_SECURE: Final[bool] = False
+    # Use a temporary directory for tests
+    _test_root = os.environ.get("WIKI_WORK_ROOT", "./test_data")
+    WIKI_WORK_ROOT: Final[Path] = Path(_test_root).resolve()
+
+
+class ProductionConfig(Config):
+    """Production configuration with security enforced."""
+    DEBUG: Final[bool] = False
+    SESSION_COOKIE_SECURE: Final[bool] = True  # Requires HTTPS
+
+    # In production, SECRET_KEY must be set - use a placeholder that will fail
+    # at runtime (not import time) if not overridden
+    SECRET_KEY: Final[str] = os.environ.get("FLASK_SECRET_KEY", "production-secret-key-not-set")
 
 
 # Log configuration at startup for debugging purposes.

@@ -1,9 +1,8 @@
 # tests/test_wikipedia_import.py
 # Tests for Wikipedia article import functionality
 
-import pytest
 from unittest.mock import patch, Mock
-from wikiops.wikipedia import fetch_wikipedia_article, validate_article_title
+from src.wikiops.wikipedia import fetch_wikipedia_article, validate_article_title
 
 
 class TestValidateArticleTitle:
@@ -66,11 +65,11 @@ class TestFetchWikipediaArticle:
         mock_get.return_value = mock_response
 
         wikitext, error = fetch_wikipedia_article("Test Article")
-        
+
         assert wikitext == "Article content here"
         assert error is None
         mock_get.assert_called_once()
-        
+
         # Verify User-Agent header is included
         call_args = mock_get.call_args
         assert 'headers' in call_args.kwargs
@@ -91,7 +90,7 @@ class TestFetchWikipediaArticle:
         mock_get.return_value = mock_response
 
         wikitext, error = fetch_wikipedia_article("NonExistentArticle123456")
-        
+
         assert wikitext is None
         assert error is not None
         assert "not found" in error.lower()
@@ -103,7 +102,7 @@ class TestFetchWikipediaArticle:
         mock_get.side_effect = requests.exceptions.Timeout()
 
         wikitext, error = fetch_wikipedia_article("Test Article")
-        
+
         assert wikitext is None
         assert error is not None
         assert "timed out" in error.lower()
@@ -115,7 +114,7 @@ class TestFetchWikipediaArticle:
         mock_get.side_effect = requests.exceptions.ConnectionError()
 
         wikitext, error = fetch_wikipedia_article("Test Article")
-        
+
         assert wikitext is None
         assert error is not None
         assert "connect" in error.lower()
@@ -123,7 +122,7 @@ class TestFetchWikipediaArticle:
     def test_fetch_empty_title(self):
         """Test that empty title returns error without making request."""
         wikitext, error = fetch_wikipedia_article("")
-        
+
         assert wikitext is None
         assert error is not None
         assert "required" in error.lower()
@@ -131,7 +130,7 @@ class TestFetchWikipediaArticle:
     def test_fetch_whitespace_title(self):
         """Test that whitespace-only title returns error."""
         wikitext, error = fetch_wikipedia_article("   ")
-        
+
         assert wikitext is None
         assert error is not None
         assert "required" in error.lower()
@@ -150,7 +149,7 @@ class TestFetchWikipediaArticle:
         mock_get.return_value = mock_response
 
         wikitext, error = fetch_wikipedia_article("Test Article")
-        
+
         assert wikitext is None
         assert error is not None
         assert "error" in error.lower()
@@ -164,7 +163,7 @@ class TestFetchWikipediaArticle:
         mock_get.return_value = mock_response
 
         wikitext, error = fetch_wikipedia_article("Test Article")
-        
+
         assert wikitext is None
         assert error is not None
         assert "invalid response" in error.lower() or "api" in error.lower()
@@ -183,7 +182,7 @@ class TestFetchWikipediaArticle:
         mock_get.return_value = mock_response
 
         wikitext, error = fetch_wikipedia_article("Test Article")
-        
+
         assert wikitext is None
         assert error is not None
         assert "extract" in error.lower()

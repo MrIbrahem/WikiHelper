@@ -42,3 +42,4 @@ data/
 .DS_Store
 Thumbs.db
 .claude/settings.local.json
+logs/wikihelper.log

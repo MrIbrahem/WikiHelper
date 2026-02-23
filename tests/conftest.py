@@ -16,8 +16,8 @@ import pytest
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from app import create_app
-from config import TestingConfig
+from src.main_app import create_app
+from src.config import TestingConfig
 
 
 @pytest.fixture
