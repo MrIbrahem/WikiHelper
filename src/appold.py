@@ -106,16 +106,12 @@ root.mkdir(parents=True, exist_ok=True)
 
 def is_safe_redirect_url(url: str) -> bool:
     """
-    Validate that a URL is safe for redirects (relative or same-host).
-
-    This prevents open-redirect vulnerabilities by ensuring the redirect
-    target is either a relative path or belongs to the same host.
-
-    Args:
-        url: The URL to validate.
-
+    Determine whether a redirect URL is safe by allowing only relative paths.
+    
+    Only relative URLs (no scheme and no network location) are considered safe; absolute URLs are rejected.
+    
     Returns:
-        True if the URL is safe to redirect to, False otherwise.
+        True if the URL is a relative path, False otherwise.
     """
     from urllib.parse import urlparse
 
@@ -129,17 +125,15 @@ def is_safe_redirect_url(url: str) -> bool:
 
 def validate_username(username: str) -> bool:
     """
-    Validate a username from session for use as a directory name.
-
-    This prevents path traversal attacks by rejecting usernames that
-    contain path separators, parent directory references, or other
-    unsafe characters.
-
-    Args:
-        username: The username to validate.
-
+    Check whether a session username is safe to use as a filesystem directory name.
+    
+    Rejects empty values, names containing path separators or parent-directory references, and Windows reserved device names.
+    
+    Parameters:
+        username (str): The username to validate.
+    
     Returns:
-        True if the username is safe, False otherwise.
+        bool: `True` if the username is safe to use as a directory name, `False` otherwise.
     """
     if not username:
         return False
@@ -237,13 +231,11 @@ def check_user() -> Optional[RouteResponse]:
 @app.after_request
 def add_security_headers(response: Response) -> Response:
     """
-    Add security headers to all responses.
-
-    These headers help protect against common web vulnerabilities:
-    - X-Content-Type-Options: Prevents MIME sniffing
-    - X-Frame-Options: Prevents clickjacking
-    - X-XSS-Protection: Enables browser XSS filter
-    - Strict-Transport-Security: Enforces HTTPS (when enabled)
+    Add security headers to an HTTP response.
+    
+    Adds standard security-related HTTP headers and, when session cookies are marked secure, a Strict-Transport-Security header.
+    Returns:
+        response (Response): The same Response instance with security headers applied.
     """
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
@@ -261,16 +253,13 @@ def add_security_headers(response: Response) -> Response:
 @app.errorhandler(RequestEntityTooLarge)
 def handle_large_request(_e: RequestEntityTooLarge) -> Tuple[Response, int]:
     """
-    Handle requests that exceed MAX_CONTENT_LENGTH.
-
-    This handler returns a JSON error response for oversized uploads,
-    which is useful for AJAX-based file uploads.
-
-    Args:
-        e: The RequestEntityTooLarge exception.
-
+    Return a JSON error response for requests that exceed the configured maximum payload size.
+    
+    Parameters:
+        _e (RequestEntityTooLarge): The exception raised when the request body is too large.
+    
     Returns:
-        JSON response with error details and 413 status code.
+        tuple: A tuple containing a JSON response object with `error` and `message` fields and the HTTP status code 413.
     """
     return jsonify({
         "error": "Request too large",
@@ -285,17 +274,12 @@ def handle_large_request(_e: RequestEntityTooLarge) -> Tuple[Response, int]:
 @app.route("/set_user", methods=["GET", "POST"])
 def set_user() -> RouteResponse:
     """
-    Set the username in session for user identification.
-
-    GET: Display the username form.
-    POST: Process the form and set the session.
-
-    The username is slugified for use as a directory name, so special
-    characters and non-ASCII text are removed.
-
+    Render or process the username setup form and store a filesystem-safe username in the session.
+    
+    On GET, render the username form. On successful POST, validate and slugify the submitted username, set session["username"] (session is marked permanent), and redirect to the provided safe next URL or the index. If validation fails, re-render the form with an error message.
+    
     Returns:
-        GET: Rendered set_user.html template.
-        POST: Redirect to next URL or index with username in session.
+        A rendered template for the username form or a redirect response to the next page or index.
     """
     if request.method == "POST":
         username = request.form.get("username", "").strip()
@@ -330,10 +314,10 @@ def set_user() -> RouteResponse:
 @app.route("/logout")
 def logout() -> RouteResponse:
     """
-    Clear the username from session and redirect to user setup.
-
+    Clear the current session's username and redirect the client to the user setup page.
+    
     Returns:
-        Redirect to set_user with session cleared.
+        A redirect response to the set_user route.
     """
     session.pop("username", None)
     flash("Logged out successfully.", "info")
@@ -380,17 +364,12 @@ def index() -> str:
 @app.route("/new", methods=["GET", "POST"])
 def new_workspace() -> RouteResponse:
     """
-    Create a new workspace from pasted or uploaded WikiText.
-
-    GET: Display the new workspace form.
-    POST: Create the workspace from submitted content.
-
-    The form accepts either direct text input or file upload.
-    File upload takes precedence if both are provided.
-
+    Display the new-workspace form and create a workspace from submitted WikiText or uploaded file.
+    
+    Accepts either pasted WikiText or an uploaded UTF-8 text file (file upload takes precedence). On POST, validates title and content, creates or reuses a workspace, and redirects to the workspace edit page on success; on validation or decoding errors, re-renders the form with error messages.
+    
     Returns:
-        GET: Rendered new.html template.
-        POST: Redirect to edit page on success, or form with errors.
+        Rendered template or redirect response: on GET renders the new workspace form; on successful POST redirects to the edit page for the created or existing workspace; on error re-renders the form with error messages.
     """
     user_root = get_user_root()
     if not user_root:
@@ -447,17 +426,12 @@ def new_workspace() -> RouteResponse:
 @app.route("/import-wikipedia", methods=["GET", "POST"])
 def import_wikipedia() -> RouteResponse:
     """
-    Import an article from English Wikipedia to create a new workspace.
-
-    GET: Display the Wikipedia import form.
-    POST: Fetch article and create workspace.
-
-    The article title is validated client-side and server-side before
-    making the API request to Wikipedia.
-
+    Import an English Wikipedia article into a new workspace.
+    
+    Supports GET to display the import form and POST to validate the article title, fetch wikitext from Wikipedia, and create a workspace. On successful import redirects to the workspace editor; on validation or fetch errors re-renders the form with error messages.
+    
     Returns:
-        GET: Rendered import_wikipedia.html template.
-        POST: Redirect to edit page on success, or form with errors.
+        Rendered import form template for GET or on error, or a redirect to the workspace editor on successful import.
     """
     user_root = get_user_root()
     if not user_root:
@@ -510,19 +484,16 @@ def import_wikipedia() -> RouteResponse:
 @app.route("/w/<slug>/edit", methods=["GET"])
 def edit_workspace(slug: str) -> str:
     """
-    Edit workspace's editable.wiki content.
-
-    This route displays the editing interface with the current editable
-    content and a preview of the restored content.
-
-    Args:
-        slug: The workspace identifier (safe directory name).
-
+    Render the edit page for a workspace, showing the current editable content and a preview of the restored content.
+    
+    Parameters:
+        slug (str): Workspace identifier (filesystem-safe directory name).
+    
     Returns:
-        Rendered edit.html template with workspace content.
-
+        Rendered HTML for the workspace edit page.
+    
     Raises:
-        404: If workspace doesn't exist or slug is invalid.
+        werkzeug.exceptions.NotFound: If the user is not found, the slug is invalid, or required workspace files (like `editable.wiki`) are missing.
     """
     user_root = get_user_root()
     if not user_root:
@@ -561,20 +532,18 @@ def edit_workspace(slug: str) -> str:
 @app.route("/w/<slug>/save", methods=["POST"])
 def save_workspace(slug: str) -> RouteResponse:
     """
-    Save workspace's editable.wiki and regenerate restored.wiki.
-
-    This route handles form submission from the edit page. It saves
-    the user's edits and triggers reference restoration.
-
-    Args:
-        slug: The workspace identifier.
-
+    Save edits to a workspace's editable.wiki and regenerate its restored.wiki.
+    
+    Processes the edit form submission, updates the workspace contents and status, and redirects to the restored.wiki file on success.
+    
+    Parameters:
+        slug (str): Workspace slug used to locate the workspace directory.
+    
     Returns:
-        Redirect to view the restored file on success.
-        Redirect back to edit page on error.
-
+        A redirect response to the workspace's restored.wiki on success, or a redirect back to the edit page on error.
+    
     Raises:
-        404: If workspace doesn't exist.
+        404: If the current user root is unavailable or the specified workspace does not exist.
     """
     user_root = get_user_root()
     if not user_root:
@@ -652,20 +621,15 @@ def browse_workspace(slug: str) -> str:
 @app.route("/w/<slug>/file/<name>")
 def view_file(slug: str, name: str) -> str:
     """
-    View a specific file in the workspace.
-
-    Displays the file content in a readable format. JSON files are
-    pretty-printed for readability.
-
-    Args:
-        slug: The workspace identifier.
-        name: The filename to view.
-
+    Render a workspace file's contents for display.
+    
+    JSON files are pretty-printed for readability when applicable.
+    
     Returns:
-        Rendered view_file.html template with file content.
-
+        HTML string of the rendered view_file template containing the file content.
+    
     Raises:
-        404: If workspace or file doesn't exist.
+        werkzeug.exceptions.NotFound: If the user root, workspace, or requested file does not exist (results in an HTTP 404).
     """
     user_root = get_user_root()
     if not user_root:
@@ -691,19 +655,17 @@ def view_file(slug: str, name: str) -> str:
 @app.route("/w/<slug>/download/<name>")
 def download_file(slug: str, name: str) -> Response:
     """
-    Download a specific file from the workspace.
-
-    Returns the file as an attachment with appropriate content type.
-
-    Args:
-        slug: The workspace identifier.
-        name: The filename to download.
-
+    Send the specified workspace file as a downloadable attachment.
+    
+    Parameters:
+        slug (str): Workspace identifier (workspace slug).
+        name (str): Filename within the workspace to download.
+    
     Returns:
-        Response with file content as attachment.
-
+        Response: A Flask Response containing the file content as an attachment. Files ending with `.json` are served with `application/json`; all other files are served with `text/plain`.
+    
     Raises:
-        404: If workspace or file doesn't exist.
+        404: If the user root, workspace, or requested file does not exist.
     """
     user_root = get_user_root()
     if not user_root:

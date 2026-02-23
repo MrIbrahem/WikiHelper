@@ -31,10 +31,13 @@ RouteResponse = str | Response | WerkzeugResponse
 
 def _is_safe_redirect_url(url: str) -> bool:
     """
-    Validate that a URL is safe for redirects (relative or same-host).
-
-    This prevents open-redirect vulnerabilities by ensuring the redirect
-    target is either a relative path or belongs to the same host.
+    Determine whether a redirect URL is a relative path and therefore safe to use.
+    
+    Parameters:
+        url (str): The URL to validate.
+    
+    Returns:
+        bool: `True` if the URL is relative (has no scheme and no network location), `False` otherwise.
     """
     from urllib.parse import urlparse
 
@@ -47,7 +50,13 @@ def _is_safe_redirect_url(url: str) -> bool:
 
 def _validate_username(username: str) -> bool:
     """
-    Validate a username from session for use as a directory name.
+    Check whether a username is safe to use as a filesystem directory name.
+    
+    Rejects empty names, names containing '..', '/' or '\\', and reserved Windows device names
+    (such as 'con', 'prn', 'aux', 'nul', 'com1'–'com9', 'lpt1'–'lpt9').
+    
+    Returns:
+        True if the username is valid for use as a directory name, False otherwise.
     """
     if not username:
         return False
@@ -65,7 +74,12 @@ def _validate_username(username: str) -> bool:
 
 def _get_user_root() -> Optional[Path]:
     """
-    Get the root directory for the current user based on session.
+    Return the filesystem root directory for the current session's user or `None` if unavailable.
+    
+    Retrieves the username from the session, validates it, constructs the user directory under the configured `WIKI_WORK_ROOT`, ensures the resolved user path is contained within that root, creates the directory if missing, and returns the resolved Path.
+    
+    Returns:
+        Path | None: The resolved Path to the user's root directory if a valid username exists and path checks succeed; `None` if the username is missing/invalid or path resolution/security checks fail.
     """
     from flask import current_app
 
@@ -94,10 +108,12 @@ def _get_user_root() -> Optional[Path]:
 @bp.route("/set_user", methods=["GET", "POST"])
 def set_user() -> RouteResponse:
     """
-    Set the username in session for user identification.
-
-    GET: Display the username form.
-    POST: Process the form and set the session.
+    Present a username entry form (GET) and, on POST, validate and store a slugified username in the session before redirecting to a safe next URL.
+    
+    GET: renders the username form. POST: trims and slugifies the submitted username, flashes an error and re-renders the form on invalid input, validates the target redirect for safety, marks the session permanent, stores the sanitized username under session["username"], and redirects to the determined next URL.
+    
+    Returns:
+        A Flask response that either renders the username form template or redirects to the selected safe next page.
     """
     if request.method == "POST":
         username = request.form.get("username", "").strip()
@@ -129,7 +145,12 @@ def set_user() -> RouteResponse:
 @bp.route("/logout")
 def logout() -> RouteResponse:
     """
-    Clear the username from session and redirect to user setup.
+    Clear the current username from the session and redirect the user to the username setup page.
+    
+    Removes the "username" key from the session and flashes an informational logout message.
+    
+    Returns:
+        A Flask redirect response to the main.set_user route.
     """
     session.pop("username", None)
     flash("Logged out successfully.", "info")
@@ -139,10 +160,13 @@ def logout() -> RouteResponse:
 @bp.route("/health")
 def health() -> dict:
     """
-    Health check endpoint for monitoring.
-
+    Health check endpoint returning service status and metadata.
+    
     Returns:
-        JSON with status and version information.
+        dict: JSON-serializable object with keys:
+            - "status": service health string (e.g., "healthy").
+            - "service": service name.
+            - "version": service version.
     """
     from flask import jsonify
     return jsonify({
@@ -155,7 +179,13 @@ def health() -> dict:
 @bp.route("/")
 def index() -> str:
     """
-    Dashboard - list all workspaces for the current user.
+    Render the dashboard showing active and completed workspaces for the current user.
+    
+    If there is no valid user context, renders the dashboard with empty workspace lists.
+    Returns:
+        str: Rendered HTML for the index dashboard. The template context includes
+        `active_workspaces` (workspaces whose status is not "done") and
+        `done_workspaces` (workspaces whose status is "done").
     """
     user_root = _get_user_root()
     if not user_root:
