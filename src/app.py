@@ -222,8 +222,14 @@ def check_user() -> Optional[RouteResponse]:
 
     if not request.cookies.get("username"):
         # Redirect to user setup, preserving the original destination.
-        return redirect(url_for("set_user", next=request.url))
+        # return redirect(url_for("set_user", next=request.url))
 
+        # Pass the relative path to avoid failing is_safe_redirect_url's
+        # scheme/netloc check, which blocks absolute URLs.
+        next_path = request.path
+        if request.query_string:
+            next_path = f"{request.path}?{request.query_string.decode('utf-8')}"
+        return redirect(url_for("set_user", next=next_path))
     return None
 
 
