@@ -65,7 +65,14 @@ def create_app(config_class: Optional[type] = None) -> Flask:
         else:
             config_class = Config
 
-    app = Flask(__name__, template_folder="../templates", static_folder="../static")
+    # Use absolute paths for template and static folders
+    # __file__ is in main_app/, so parent is src/
+    src_dir = Path(__file__).parent.parent
+    app = Flask(
+        __name__,
+        template_folder=str(src_dir / "templates"),
+        static_folder=str(src_dir / "static")
+    )
     app.config.from_object(config_class)
 
     # Initialize extensions
